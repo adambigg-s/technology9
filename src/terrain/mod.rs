@@ -1,7 +1,4 @@
-use std::any;
 use std::fmt::Debug;
-use std::hash;
-use std::hash::Hash;
 use std::hash::Hasher;
 
 use crate::world::chunk;
@@ -12,12 +9,12 @@ pub struct TerrainGenerator {}
 
 impl TerrainGenerator
 {
-     pub fn new(seed: u32) -> Self
+     pub fn new(_seed: u32) -> Self
      {
           Self {}
      }
 
-     pub fn form_chunk(&self, chunk: &mut chunk::Chunk) -> delta::BlockDeltas
+     pub fn form_chunk(&self, _chunk: &mut chunk::Chunk) -> delta::BlockDeltas
      {
           todo!()
      }
