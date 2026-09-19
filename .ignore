@@ -1,0 +1,3 @@
+# Helix file-picker ignores sound and image files
+/res
+/images
