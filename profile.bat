@@ -2,4 +2,4 @@
 
 cargo +nightly build --profile profiling
 
-samply record target\profiling\backrooms_liminal.exe
+samply record target\profiling\game.exe
