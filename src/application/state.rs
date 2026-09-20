@@ -187,11 +187,11 @@ where
                &mut encoder,
           );
 
-          let render_target = if let Some(postpass_texture) = &self.gfx_render.offscreen_texture_a
-          {
-               &postpass_texture.view
-          }
-          else
+          let render_target = /* if let Some(postpass_texture) = &self.gfx_render.offscreen_texture_a */
+          // {
+          //      &postpass_texture.view
+          // }
+          // else
           {
                &surface_view
           };
@@ -204,7 +204,7 @@ where
                          depth_slice: None,
                          resolve_target: None,
                          ops: wgpu::Operations {
-                              load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                              load: wgpu::LoadOp::Clear(self.gfx_render.clear_color),
                               store: wgpu::StoreOp::Store,
                          },
                     })],

@@ -1,7 +1,8 @@
 use std::fmt::Display;
-use std::fmt::{self};
+use std::fmt;
 use std::mem;
 
+use crate::engine::kinematics;
 use crate::engine::transform;
 use crate::visual::light;
 
@@ -121,5 +122,19 @@ where
      fn from(value: T) -> Self
      {
           unsafe { mem::transmute(value.into()) }
+     }
+}
+
+impl kinematics::Collision for Block
+{
+     type Collider = ();
+
+     fn collides(&self, _: Self::Collider) -> bool
+     {
+          match self
+          {
+               | Block::Air => false,
+               | _ => true,
+          }
      }
 }

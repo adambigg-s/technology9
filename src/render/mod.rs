@@ -139,11 +139,13 @@ pub struct GfxRenderer
 
      pub depth_texture: Option<resource::GfxTexture>,
 
-     pub offscreen_texture_a: Option<resource::GfxTexture>,
-     pub offscreen_texture_b: Option<resource::GfxTexture>,
-
+     // pub offscreen_texture_a: Option<resource::GfxTexture>,
+     // pub offscreen_texture_b: Option<resource::GfxTexture>,
      #[builder(default)]
      pub render_queue: Vec<GfxDrawCall>,
+
+     #[builder(default = wgpu::Color::BLACK)]
+     pub clear_color: wgpu::Color,
 }
 
 impl GfxRenderer
@@ -157,11 +159,11 @@ impl GfxRenderer
      {
           self.depth_texture = Some(resource::GfxTexture::new_depth(context, "Main depth")?);
 
-          self.offscreen_texture_a =
-               Some(resource::GfxTexture::new_render_target(context, "Postpass target a")?);
+          // self.offscreen_texture_a =
+          //      Some(resource::GfxTexture::new_render_target(context, "Postpass target a")?);
 
-          self.offscreen_texture_b =
-               Some(resource::GfxTexture::new_render_target(context, "Postpass target b")?);
+          // self.offscreen_texture_b =
+          //      Some(resource::GfxTexture::new_render_target(context, "Postpass target b")?);
 
           Ok(())
      }

@@ -1,5 +1,6 @@
 use std::ops;
 
+use crate::engine::kinematics;
 use crate::engine::storage::buffer;
 use crate::visual::atlas;
 use crate::visual::light;
@@ -128,3 +129,46 @@ impl Chunk
           .raw_opaque_mesh()
      }
 }
+
+impl kinematics::Collision for Chunk
+{
+     type Collider = kinematics::BoxCollider;
+
+     fn collides(&self, collider: Self::Collider) -> bool
+     {
+          let mins = collider.lo.map(|val| val.floor() as i32);
+          let maxs = collider.hi.map(|val| val.ceil() as i32);
+          for z in mins[2] .. maxs[2]
+          {
+               for y in mins[1] .. maxs[1]
+               {
+                    for x in mins[0] .. maxs[0]
+                    {
+                         let coord = glam::ivec3(x, y, z);
+                         let target_chunk = glam::ivec3(
+                              (coord.x as f32 / self.width() as f32).floor() as i32,
+                              (coord.y as f32 / self.height() as f32).floor() as i32,
+                              (coord.z as f32 / self.width() as f32).floor() as i32,
+                         );
+                         if target_chunk != self.offset()
+                         {
+                              continue;
+                         }
+
+                         let chunk_coord = self.to_chunk_coords(coord);
+                         if !self.check_index(chunk_coord)
+                         {
+                              continue;
+                         }
+                         if self.get(chunk_coord).collides(())
+                         {
+                              return true;
+                         }
+                    }
+               }
+          }
+
+          false
+     }
+}
+

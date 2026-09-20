@@ -1,9 +1,8 @@
 pub mod block;
 pub mod chunk;
 pub mod delta;
-pub mod manager;
+pub mod loader;
 pub mod map;
-pub mod physics;
 
 use std::sync::{self};
 
