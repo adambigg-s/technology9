@@ -51,38 +51,6 @@ pub enum ChunkRequest
      ShutdownThread,
 }
 
-// #[derive(Debug, Default)]
-// pub enum ChunkRequest
-// {
-//      GenerateTerrain
-//      {
-//           coord: glam::IVec3,
-//      },
-//      PlaceDecorators
-//      {
-//           chunk: sync::Arc<chunk::Chunk>,
-//           deltas: Vec<delta::ChunkDelta<block::Block>>,
-//      },
-//      PropagateLighting
-//      {
-//           view: world::ChunkView,
-//           chunk: sync::Arc<chunk::Chunk>,
-//      },
-//      UpdateLighting
-//      {
-//           view: world::ChunkView,
-//           chunk: sync::Arc<chunk::Chunk>,
-//           deltas: Vec<delta::ChunkDelta<light::LightDelta>>,
-//      },
-//      Mesh
-//      {
-//           view: world::ChunkView,
-//           chunk: sync::Arc<chunk::Chunk>,
-//      },
-//      #[default]
-//      ShutdownThread,
-// }
-
 #[derive(Debug)]
 pub enum ChunkResponse
 {
@@ -199,18 +167,6 @@ impl ChunkManager
                let gfx_mesh = mesh::GfxMesh::new(context, &raw_mesh.vertices, &raw_mesh.indices);
                let name = Self::chunk_key(raw_mesh.offset);
                render.register_mesh(&name, gfx_mesh);
-               // render.register_resource(
-               //      &format!("{}_time_uni", name),
-               //      util::uniform::<f32>(context, "Timer uniform"),
-               // );
-               // render
-               //      .register_bind_group(
-               //           context,
-               //           &format!("{}_time_bg", Self::chunk_key(raw_mesh.offset)),
-               //           "time_layout",
-               //           &[&format!("{}_time_uni", name)],
-               //      )
-               //      .unwrap();
                self.render_chunks.insert(raw_mesh.offset);
           });
 
@@ -218,8 +174,6 @@ impl ChunkManager
                let name = Self::chunk_key(chunk_coord);
                self.render_chunks.remove(&chunk_coord);
                render.unregister_mesh(&name);
-               // render.unregister_resource(&format!("{}_time_uni", name));
-               // render.unregister_bind_group(&format!("{}_time_bg", name));
           });
      }
 
@@ -329,14 +283,6 @@ impl ChunkManager
 
                self.advance_chunk(coord);
 
-               // for (dx, dz) in neighbors::von_neumann2()
-               // {
-               //      let neighbor = coord + glam::ivec3(dx, 0, dz);
-               //      if visited.insert(neighbor)
-               //      {
-               //           queue.push_front(neighbor);
-               //      }
-               // }
                for (dx, dy, dz) in neighbors::von_neumann3()
                {
                     let neighbor = coord + glam::ivec3(dx, dy, dz);

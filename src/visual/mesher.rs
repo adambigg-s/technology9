@@ -514,12 +514,6 @@ impl<'c> ChunkMesher<'c>
           mesh.shift(world_coord.as_vec3());
           mesh.shift(transform.position + glam::Vec3::splat(0.5));
 
-          // mesh.shift(glam::Vec3::splat(-0.5));
-          // mesh.scale(glam::vec3(0.7, 0.1, 0.3));
-          // mesh.rotate(rotation);
-          // mesh.shift(world_coord.as_vec3());
-          // mesh.shift(glam::vec3(0.5, 0.15 * 0.5, 0.5));
-
           (0 .. mesh.size).for_each(|index| {
                let rectilinear::RectilinearMeshSlice {
                     face,
@@ -542,7 +536,6 @@ impl<'c> ChunkMesher<'c>
                });
           });
 
-          // indices.extend_from_slice(&mesh.index.iter().map(|&idx| idx + index_shift));
           indices.extend(mesh.index.iter().map(|&idx| idx + index_shift));
      }
 }

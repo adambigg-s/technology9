@@ -8,10 +8,6 @@ pub enum Face
      Right,
      Back,
      Front,
-     // DiagPosFront,
-     // DiagPosBack,
-     // DiagNegFront,
-     // DiagNegBack,
 }
 
 impl Face
@@ -24,12 +20,6 @@ impl Face
           Face::Front,
           Face::Back,
      ];
-     // pub const DIAGONALS: [Face; 4] = [
-     //      Face::DiagPosFront,
-     //      Face::DiagPosBack,
-     //      Face::DiagNegFront,
-     //      Face::DiagNegBack,
-     // ];
 
      pub fn cardinals() -> [Self; 6]
      {
@@ -46,7 +36,6 @@ impl Face
                | Face::Right => glam::ivec3(1, 0, 0),
                | Face::Back => glam::ivec3(0, 0, 1),
                | Face::Front => glam::ivec3(0, 0, -1),
-               // | _ => glam::IVec3::ZERO,
           }
      }
 
@@ -60,10 +49,6 @@ impl Face
                | Face::Left => glam::Vec3::NEG_X,
                | Face::Back => glam::Vec3::Z,
                | Face::Front => glam::Vec3::NEG_Z,
-               // | Face::DiagPosFront => glam::ivec3(1, 0, -1).as_vec3().normalize(),
-               // | Face::DiagPosBack => glam::ivec3(1, 0, 1).as_vec3().normalize(),
-               // | Face::DiagNegFront => glam::ivec3(-1, 0, -1).as_vec3().normalize(),
-               // | Face::DiagNegBack => glam::ivec3(-1, 0, 1).as_vec3().normalize(),
           }
      }
 
@@ -127,42 +112,7 @@ impl Face
                          (ivec3(1, 1, 0), ivec2(1, 0)),
                          (ivec3(1, 0, 0), ivec2(1, 1)),
                     ]
-               } // | Face::DiagPosFront =>
-                 // {
-                 //      [
-                 //           (ivec3(0, 1, 0), ivec2(0, 0)),
-                 //           (ivec3(0, 0, 0), ivec2(0, 1)),
-                 //           (ivec3(1, 1, 1), ivec2(1, 0)),
-                 //           (ivec3(1, 0, 1), ivec2(1, 1)),
-                 //      ]
-                 // }
-                 // | Face::DiagPosBack =>
-                 // {
-                 //      [
-                 //           (ivec3(1, 1, 1), ivec2(0, 0)),
-                 //           (ivec3(1, 0, 1), ivec2(0, 1)),
-                 //           (ivec3(0, 1, 0), ivec2(1, 0)),
-                 //           (ivec3(0, 0, 0), ivec2(1, 1)),
-                 //      ]
-                 // }
-                 // | Face::DiagNegFront =>
-                 // {
-                 //      [
-                 //           (ivec3(1, 1, 0), ivec2(0, 0)),
-                 //           (ivec3(1, 0, 0), ivec2(0, 1)),
-                 //           (ivec3(0, 1, 1), ivec2(1, 0)),
-                 //           (ivec3(0, 0, 1), ivec2(1, 1)),
-                 //      ]
-                 // }
-                 // | Face::DiagNegBack =>
-                 // {
-                 //      [
-                 //           (ivec3(0, 1, 1), ivec2(0, 0)),
-                 //           (ivec3(0, 0, 1), ivec2(0, 1)),
-                 //           (ivec3(1, 1, 0), ivec2(1, 0)),
-                 //           (ivec3(1, 0, 0), ivec2(1, 1)),
-                 //      ]
-                 // }
+               }
           }
      }
 }

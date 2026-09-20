@@ -8,6 +8,6 @@ pub mod world;
 
 fn main() -> anyhow::Result<()>
 {
-     application::run::<game_entry::Game>()?;
+     application::run::<game_entry::State>()?;
      Ok(())
 }

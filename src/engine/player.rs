@@ -92,8 +92,6 @@ pub struct PlayerSoundController
      pub ambience: Option<static_sound::StaticSoundData>,
      pub listener: Option<listener::ListenerHandle>,
 
-     // pub spatial_tracks: Vec<track::SpatialTrackHandle>,
-     // pub tracks: Vec<(static_sound::StaticSoundHandle, &'static str)>,
      pub spatial_tracks: rh::FxHashMap<&'static str, track::SpatialTrackHandle>,
      pub tracks: rh::FxHashMap<&'static str, static_sound::StaticSoundHandle>,
 
@@ -150,9 +148,7 @@ impl PlayerSoundController
           }
 
           let listener = None;
-          // let spatial_tracks = Vec::new();
           let spatial_tracks = rh::FxHashMap::default();
-          // let tracks = Vec::new();
           let tracks = rh::FxHashMap::default();
 
           Ok(Self {
@@ -192,8 +188,6 @@ impl PlayerSoundController
           if let Some(sound) = self.named_sounds.get(name)
           {
                self.tracks.insert(name, audio.play(sound.clone()).unwrap());
-               // self.tracks.entry(name).or_insert(audio.play(sound.clone()).unwrap());
-               // self.tracks.push((audio.play(sound.clone()).unwrap(), name));
                return;
           }
 
@@ -204,9 +198,7 @@ impl PlayerSoundController
      {
           if let Some(sound) = self.named_sounds.get(name)
           {
-               // self.tracks.push((audio.play(sound.clone().volume(db)).unwrap(), name));
                self.tracks.insert(name, audio.play(sound.clone().volume(db)).unwrap());
-               // self.tracks.entry(name).or_insert(audio.play(sound.clone()).unwrap());
                return;
           }
 
@@ -219,12 +211,6 @@ impl PlayerSoundController
           {
                track.stop(kira::Tween::default());
           }
-          // self.tracks.iter_mut().for_each(|(handle, track_name)| {
-          //      if *track_name == name
-          //      {
-          //           handle.stop(kira::Tween::default());
-          //      }
-          // });
      }
 
      pub fn named_sound_directional_stop(&mut self, name: &'static str)
@@ -239,7 +225,6 @@ impl PlayerSoundController
           location: glam::Vec3,
      )
      {
-          // self.spatial_tracks.retain_mut(|track| track.state() != track::TrackPlaybackState::Paused);
           self.spatial_tracks.retain(|_, track| track.state() != track::TrackPlaybackState::Paused);
           if let (Some(sound), Some(listener)) = (self.named_sounds.get(name), self.listener.as_ref())
           {
@@ -254,7 +239,6 @@ impl PlayerSoundController
                     )
                     .unwrap();
                track.play(sound.clone()).unwrap();
-               // self.spatial_tracks.push(track);
                self.spatial_tracks.insert(name, track);
                return;
           }
@@ -285,28 +269,6 @@ impl PlayerSoundController
           }
      }
 
-     // pub fn movement(
-     //      &mut self,
-     //      audio: &mut kira::AudioManager,
-     //      kinematics: &kinematics::Kinematics,
-     //      time: f32,
-     // )
-     // {
-     //      let diff = time - self.last_sound_time;
-     //      if diff > self.sound_delay / (self.velocity_coeff * kinematics.velocity.length())
-     //           && !kinematics.flying
-     //      {
-     //           let attenuation = (self.velocity_coeff * kinematics.velocity.length()).powf(2.0);
-     //           audio.play(
-     //                self.walking_sound[self.last_sound % self.walking_sound.len()]
-     //                     .clone()
-     //                     .volume((rand::random_range(-15.0 .. -10.0) + attenuation).min(0.0)),
-     //           )
-     //           .unwrap();
-     //           self.last_sound += 1;
-     //           self.last_sound_time = time;
-     //      }
-     // }
 }
 
 #[derive(bon::Builder, Debug)]

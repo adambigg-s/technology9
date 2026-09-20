@@ -1,6 +1,7 @@
 pub mod mesh;
 pub mod resource;
 pub mod util;
+
 use std::sync;
 
 use rustc_hash as rh;
@@ -88,7 +89,6 @@ impl GfxContext
                width: window.inner_size().width,
                height: window.inner_size().height,
                present_mode: surface_caps.present_modes[0],
-               // present_mode: wgpu::PresentMode::AutoNoVsync,
                desired_maximum_frame_latency: 2,
                alpha_mode: surface_caps.alpha_modes[0],
                view_formats: Vec::new(),

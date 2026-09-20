@@ -198,7 +198,7 @@ impl kinematics::Collision for block::Block
      {
           match self
           {
-               | block::Block::Air | block::Block::AlmondWater | block::Block::Tape => false,
+               | block::Block::Air => false,
                | _ => true,
           }
      }
