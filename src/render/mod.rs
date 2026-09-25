@@ -158,22 +158,56 @@ impl GfxRenderer
 
      pub fn config_changed(&mut self, context: &GfxContext) -> anyhow::Result<()>
      {
-          if self.depth_texture.is_some()
+          match self.depth_texture.is_some()
           {
-               self.depth_texture = Some(resource::GfxTexture::new_depth(context, "Main depth")?);
+               | true =>
+               {
+                    self.enable_depth(context, true)?;
+               }
+               | false =>
+               {
+                    self.enable_depth(context, false)?;
+               }
           }
 
-          if self.offscreen_texture_a.is_some()
+          match self.offscreen_texture_a.is_some() && self.offscreen_texture_b.is_some()
+          {
+               | true =>
+               {
+                    self.enable_offscreen(context, true)?;
+               }
+               | false =>
+               {
+                    self.enable_offscreen(context, false)?;
+               }
+          }
+
+          Ok(())
+     }
+
+     pub fn enable_offscreen(&mut self, context: &GfxContext, enable: bool) -> anyhow::Result<()>
+     {
+          if enable
           {
                self.offscreen_texture_a =
                     Some(resource::GfxTexture::new_render_target(context, "Postpass target a")?);
-          }
-          if self.offscreen_texture_b.is_some()
-          {
-               self.offscreen_texture_b =
+               self.offscreen_texture_a =
                     Some(resource::GfxTexture::new_render_target(context, "Postpass target b")?);
+               return Ok(());
           }
+          self.offscreen_texture_a = None;
+          self.offscreen_texture_b = None;
+          Ok(())
+     }
 
+     pub fn enable_depth(&mut self, context: &GfxContext, enable: bool) -> anyhow::Result<()>
+     {
+          if enable
+          {
+               self.depth_texture = Some(resource::GfxTexture::new_depth(context, "Main depth")?);
+               return Ok(());
+          }
+          self.depth_texture = None;
           Ok(())
      }
 

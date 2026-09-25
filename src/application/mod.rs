@@ -7,6 +7,7 @@ use std::env;
 
 use winit::event_loop;
 
+use crate::debexecute;
 use crate::render;
 
 pub trait Application
@@ -77,12 +78,10 @@ fn init()
 {
      unsafe {
           env::set_var("RUST_LOG", "warn");
-
-          #[cfg(debug_assertions)]
-          {
+          debexecute!({
                env::set_var("RUST_BACKTRACE", "full");
                env::set_var("RUST_LOG", "info");
-          }
+          });
      };
 
      env_logger::init();

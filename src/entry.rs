@@ -2,12 +2,23 @@ use std::fs;
 
 use crate::application;
 use crate::application::input;
+use crate::engine;
+use crate::engine::camera;
+use crate::engine::kinematics;
+use crate::engine::player;
+use crate::render::GfxCamera;
 use crate::render::GfxVertex;
+use crate::render::resource;
 use crate::render::util;
 use crate::render::{self};
 
 #[derive(bon::Builder)]
-pub struct State {}
+pub struct State
+{
+     pub frame: engine::FrameData,
+     pub camera: camera::Camera,
+     pub player_controller: player::PlayerController,
+}
 
 #[repr(C)]
 #[derive(bytemuck::Pod, bytemuck::Zeroable, Debug, Default, Clone, Copy)]
@@ -110,33 +121,32 @@ impl application::Application for State
                .build()
      }
 
-     fn setup(
-          gfx_context: &mut render::GfxContext,
-          gfx_render: &mut render::GfxRenderer,
-     ) -> anyhow::Result<Self>
+     fn setup(ctx: &mut render::GfxContext, rnd: &mut render::GfxRenderer) -> anyhow::Result<Self>
      {
-          gfx_render.clear_color = wgpu::Color {
+          rnd.enable_depth(ctx, true);
+          rnd.enable_offscreen(ctx, false);
+
+          rnd.clear_color = wgpu::Color {
                r: 25.0 / 255.0,
                g: 25.0 / 255.0,
                b: 40.0 / 255.0,
                a: 1.0,
           };
-          gfx_render.register_pipeline::<TriPipeline>(gfx_context, "tri_pipe", &[]);
-          gfx_render.register_mesh(
+          rnd.register_mesh(
                "tri_mesh",
                util::mesh(
-                    gfx_context,
+                    ctx,
                     &[
                          TriVertex {
-                              pos: glam::vec3(-0.5, -0.5, 0.0),
+                              pos: glam::vec3(-0.5, -0.5, 1.0),
                               col: glam::vec3(1.0, 0.0, 0.0),
                          },
                          TriVertex {
-                              pos: glam::vec3(0.5, -0.5, 0.0),
+                              pos: glam::vec3(0.5, -0.5, 1.0),
                               col: glam::vec3(0.0, 1.0, 0.0),
                          },
                          TriVertex {
-                              pos: glam::vec3(0.0, 0.5, 0.0),
+                              pos: glam::vec3(0.0, 0.5, 1.0),
                               col: glam::vec3(0.0, 0.0, 1.0),
                          },
                     ],
@@ -144,33 +154,110 @@ impl application::Application for State
                ),
           );
 
-          Ok(Self {})
+          rnd.register_bind_group_layout(ctx, "global_bg_layout", &[resource::GfxBindingLayout::Uniform]);
+
+          let camera = camera::Camera::builder().fov(75.0f32).zfear(500.0).znear(0.1).build();
+          rnd.register_resource("camera_vp_uni", util::uniform::<glam::Mat4>(ctx, "Camera view-proj matrix"));
+
+          let player_controller = player::PlayerController::builder()
+               .collisions(false)
+               .collider(kinematics::BoxCollider::point_sides(
+                    camera.inner.position.to_array(),
+                    [0.45, 0.85, 0.45],
+               ))
+               .kinematics(kinematics::Kinematics::builder().up(glam::Vec3::Y).build())
+               .movespeed(4.8 * 2.0f32.powf(3.0))
+               .lookspeed(0.00125)
+               .build();
+
+          let frame = engine::FrameData::new();
+
+          rnd.register_bind_group(ctx, "global_bg", "global_bg_layout", &["camera_vp_uni"]);
+          rnd.register_pipeline::<TriPipeline>(ctx, "tri_pipe", &["global_bg_layout"]);
+
+          Ok(Self {
+               camera,
+               player_controller,
+               frame,
+          })
      }
 
      fn physics_frame(
           &mut self,
           input: &mut input::Input,
-          gfx_context: &render::GfxContext,
-          gfx_render: &render::GfxRenderer,
+          ctx: &render::GfxContext,
+          rnd: &render::GfxRenderer,
      )
      {
+          self.frame.update();
+
           if input.get_key_pres("escape")
           {
                input.request_quit = true;
           }
+
+          if input.consume_key_press("keyq")
+          {
+               input.request_grab = !input.request_grab;
+          }
+
+          let [mut dx, mut dy, mut dz] = [0.0; 3];
+          if input.get_key_pres("keyw")
+          {
+               dz += 1.0;
+          }
+          if input.get_key_pres("keys")
+          {
+               dz -= 1.0;
+          }
+          if input.get_key_pres("keyd")
+          {
+               dx += 1.0;
+          }
+          if input.get_key_pres("keya")
+          {
+               dx -= 1.0;
+          }
+          if input.get_key_pres("space")
+          {
+               dy += 1.0;
+          }
+          if input.get_key_pres("shiftleft")
+          {
+               dy -= 1.0;
+          }
+          [dx, dy, dz] = (glam::vec3(dx, dy, dz).normalize_or_zero()
+               * self.player_controller.movespeed
+               * self.frame.dt)
+               .to_array();
+          self.camera.update_position(dx, dy, dz);
+
+          let [mut dy, mut dx] = input.consume_mouse_delta().into();
+          [dy, dx] = (glam::vec2(dy, dx) * self.player_controller.lookspeed).to_array();
+          self.camera.yaw -= dy;
+          self.camera.pitch -= dx;
+          self.camera.confine_euler();
+          self.camera.inner.rotation = glam::Quat::from_rotation_z(0.0)
+               * glam::Quat::from_rotation_y(self.camera.yaw)
+               * glam::Quat::from_rotation_x(self.camera.pitch);
      }
 
      fn gfx_frame(
           &mut self,
           input: &input::Input,
-          gfx_context: &mut render::GfxContext,
-          gfx_render: &mut render::GfxRenderer,
+          ctx: &mut render::GfxContext,
+          rnd: &mut render::GfxRenderer,
      )
      {
-          gfx_render.queue(render::GfxDrawCall {
+          if let Some(resource::GfxResource::Uniform(camera_mvp)) = rnd.resources.get("camera_vp_uni")
+          {
+               camera_mvp.write(ctx, &self.camera.view_proj());
+          }
+
+          rnd.queue(render::GfxDrawCall {
                mesh: "tri_mesh".to_string(),
                pipe: "tri_pipe".to_string(),
-               bind_groups: vec![],
+               bind_groups: vec!["global_bg".to_string()],
           });
      }
 }
