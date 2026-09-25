@@ -7,6 +7,7 @@ use crate::render::util;
 use crate::render::{self};
 
 pub const MODEL_EXTS: &[&str] = &["obj"];
+pub const MODEL_TEX_EXTS: &[&str] = &["jpg", "tiff", "png"];
 
 #[repr(C)]
 #[derive(bytemuck::Pod, bytemuck::Zeroable, bon::Builder, Debug, Default, Clone, Copy)]
@@ -32,6 +33,18 @@ impl render::GfxVertex for ModelVertex
                attributes: ATTRIBS,
           }
      }
+
+     fn position(&self) -> glam::Vec4
+     {
+          glam::Vec4::new(self.pos.x, self.pos.y, self.pos.z, 1.0)
+     }
+}
+
+#[derive(bon::Builder, Debug)]
+pub struct LoadedModel
+{
+     pub vertices: Vec<ModelVertex>,
+     pub indices: Vec<u32>,
 }
 
 #[derive(bon::Builder, Debug)]
@@ -50,13 +63,6 @@ impl Default for ModelOptions
                triangulate: true,
           }
      }
-}
-
-#[derive(bon::Builder, Debug)]
-pub struct LoadedModel
-{
-     pub vertices: Vec<ModelVertex>,
-     pub indices: Vec<u32>,
 }
 
 #[derive(bon::Builder, Debug)]

@@ -43,6 +43,11 @@ impl render::GfxVertex for TriVertex
                attributes: ATTRIBS,
           }
      }
+
+     fn position(&self) -> glam::Vec4
+     {
+          glam::Vec4::new(self.pos.x, self.pos.y, self.pos.z, 1.0)
+     }
 }
 
 pub struct TriPipeline;
@@ -163,7 +168,7 @@ impl application::Application for State
           .load_as(|v| {
                TriVertex {
                     pos: v.pos,
-                    col: v.nor,
+                    col: glam::vec3(v.tex.x, v.tex.y, 1.0),
                }
           })?[0]
                .clone();
@@ -260,8 +265,6 @@ impl application::Application for State
           self.camera.inner.rotation = glam::Quat::from_rotation_z(0.0)
                * glam::Quat::from_rotation_y(self.camera.yaw)
                * glam::Quat::from_rotation_x(self.camera.pitch);
-
-          log::info!("{}", self.camera);
      }
 
      fn gfx_frame(

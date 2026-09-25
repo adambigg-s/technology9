@@ -12,6 +12,11 @@ where
      Self: bytemuck::Pod,
 {
      fn descriptor() -> wgpu::VertexBufferLayout<'static>;
+
+     fn position(&self) -> glam::Vec4
+     {
+          glam::Vec4::ZERO
+     }
 }
 
 pub trait GfxCamera
