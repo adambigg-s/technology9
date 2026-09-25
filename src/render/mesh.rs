@@ -3,7 +3,7 @@ use wgpu::util::{self};
 
 use crate::render;
 
-#[derive(bon::Builder, Debug)]
+#[derive(bon::Builder, Debug, Clone)]
 pub struct GfxMesh
 {
      pub vertex: wgpu::Buffer,

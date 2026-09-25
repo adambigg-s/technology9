@@ -1,10 +1,11 @@
 use std::time;
 
 pub mod aabb;
-pub mod do_in_debug;
 pub mod camera;
+pub mod do_in_debug;
 pub mod interp;
 pub mod kinematics;
+pub mod model;
 pub mod neighbors;
 pub mod player;
 pub mod ray;

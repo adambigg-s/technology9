@@ -5,6 +5,7 @@ use crate::application::input;
 use crate::engine;
 use crate::engine::camera;
 use crate::engine::kinematics;
+use crate::engine::model;
 use crate::engine::player;
 use crate::render::GfxCamera;
 use crate::render::GfxVertex;
@@ -154,6 +155,20 @@ impl application::Application for State
                ),
           );
 
+          let penguin_mesh = model::ModelLoader {
+               path: "./res/models/penguin",
+               context: ctx,
+               options: model::ModelOptions::default(),
+          }
+          .load_as(|v| {
+               TriVertex {
+                    pos: v.pos,
+                    col: v.nor,
+               }
+          })?[0]
+               .clone();
+          rnd.register_mesh("model_mesh", penguin_mesh);
+
           rnd.register_bind_group_layout(ctx, "global_bg_layout", &[resource::GfxBindingLayout::Uniform]);
 
           let camera = camera::Camera::builder()
@@ -263,6 +278,11 @@ impl application::Application for State
 
           rnd.queue(render::GfxDrawCall {
                mesh: "tri_mesh".to_string(),
+               pipe: "tri_pipe".to_string(),
+               bind_groups: vec!["global_bg".to_string()],
+          });
+          rnd.queue(render::GfxDrawCall {
+               mesh: "model_mesh".to_string(),
                pipe: "tri_pipe".to_string(),
                bind_groups: vec!["global_bg".to_string()],
           });
