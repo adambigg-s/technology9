@@ -12,7 +12,6 @@ pub struct Camera
 {
      #[builder(default)]
      pub inner: transform::Transform,
-     #[builder(default)]
      pub ar: f32,
      pub fov: f32,
      pub znear: f32,

@@ -138,15 +138,15 @@ impl application::Application for State
                     ctx,
                     &[
                          TriVertex {
-                              pos: glam::vec3(-0.5, -0.5, 1.0),
+                              pos: glam::vec3(-0.5, -0.5, 0.0),
                               col: glam::vec3(1.0, 0.0, 0.0),
                          },
                          TriVertex {
-                              pos: glam::vec3(0.5, -0.5, 1.0),
+                              pos: glam::vec3(0.5, -0.5, 0.0),
                               col: glam::vec3(0.0, 1.0, 0.0),
                          },
                          TriVertex {
-                              pos: glam::vec3(0.0, 0.5, 1.0),
+                              pos: glam::vec3(0.0, 0.5, 0.0),
                               col: glam::vec3(0.0, 0.0, 1.0),
                          },
                     ],
@@ -156,7 +156,12 @@ impl application::Application for State
 
           rnd.register_bind_group_layout(ctx, "global_bg_layout", &[resource::GfxBindingLayout::Uniform]);
 
-          let camera = camera::Camera::builder().fov(75.0f32).zfear(500.0).znear(0.1).build();
+          let camera = camera::Camera::builder()
+               .fov(75.0f32)
+               .ar(ctx.config.width as f32 / ctx.config.height as f32)
+               .zfear(500.0)
+               .znear(0.1)
+               .build();
           rnd.register_resource("camera_vp_uni", util::uniform::<glam::Mat4>(ctx, "Camera view-proj matrix"));
 
           let player_controller = player::PlayerController::builder()
@@ -166,7 +171,7 @@ impl application::Application for State
                     [0.45, 0.85, 0.45],
                ))
                .kinematics(kinematics::Kinematics::builder().up(glam::Vec3::Y).build())
-               .movespeed(4.8 * 2.0f32.powf(3.0))
+               .movespeed(4.8 * 2.0f32.powf(2.0))
                .lookspeed(0.00125)
                .build();
 
@@ -240,6 +245,8 @@ impl application::Application for State
           self.camera.inner.rotation = glam::Quat::from_rotation_z(0.0)
                * glam::Quat::from_rotation_y(self.camera.yaw)
                * glam::Quat::from_rotation_x(self.camera.pitch);
+
+          log::info!("{}", self.camera);
      }
 
      fn gfx_frame(
