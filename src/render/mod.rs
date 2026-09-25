@@ -83,6 +83,7 @@ impl GfxContext
                .find(|format| format.is_srgb())
                .unwrap_or(surface_caps.formats[0]);
           log::warn!("Surface format: {:?}", surface_format);
+
           let config = wgpu::SurfaceConfiguration {
                usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
                format: surface_format,
@@ -138,9 +139,9 @@ pub struct GfxRenderer
      pub resources: rh::FxHashMap<String, resource::GfxResource>,
 
      pub depth_texture: Option<resource::GfxTexture>,
+     pub offscreen_texture_a: Option<resource::GfxTexture>,
+     pub offscreen_texture_b: Option<resource::GfxTexture>,
 
-     // pub offscreen_texture_a: Option<resource::GfxTexture>,
-     // pub offscreen_texture_b: Option<resource::GfxTexture>,
      #[builder(default)]
      pub render_queue: Vec<GfxDrawCall>,
 
@@ -157,13 +158,21 @@ impl GfxRenderer
 
      pub fn config_changed(&mut self, context: &GfxContext) -> anyhow::Result<()>
      {
-          self.depth_texture = Some(resource::GfxTexture::new_depth(context, "Main depth")?);
+          if self.depth_texture.is_some()
+          {
+               self.depth_texture = Some(resource::GfxTexture::new_depth(context, "Main depth")?);
+          }
 
-          // self.offscreen_texture_a =
-          //      Some(resource::GfxTexture::new_render_target(context, "Postpass target a")?);
-
-          // self.offscreen_texture_b =
-          //      Some(resource::GfxTexture::new_render_target(context, "Postpass target b")?);
+          if self.offscreen_texture_a.is_some()
+          {
+               self.offscreen_texture_a =
+                    Some(resource::GfxTexture::new_render_target(context, "Postpass target a")?);
+          }
+          if self.offscreen_texture_b.is_some()
+          {
+               self.offscreen_texture_b =
+                    Some(resource::GfxTexture::new_render_target(context, "Postpass target b")?);
+          }
 
           Ok(())
      }
@@ -267,6 +276,16 @@ impl GfxRenderer
      pub fn queue(&mut self, call: GfxDrawCall)
      {
           self.render_queue.push(call);
+     }
+
+     pub fn front_texture_mut(&mut self) -> &mut Option<resource::GfxTexture>
+     {
+          &mut self.offscreen_texture_a
+     }
+
+     pub fn back_texture_mut(&mut self) -> &mut Option<resource::GfxTexture>
+     {
+          &mut self.offscreen_texture_b
      }
 
      pub fn render(&mut self, render_pass: &mut wgpu::RenderPass)

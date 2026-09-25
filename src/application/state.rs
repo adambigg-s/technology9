@@ -187,11 +187,12 @@ where
                &mut encoder,
           );
 
-          let render_target = /* if let Some(postpass_texture) = &self.gfx_render.offscreen_texture_a */
-          // {
-          //      &postpass_texture.view
-          // }
-          // else
+          let render_target = if let Some(postpass_texture) = &self.gfx_render.offscreen_texture_a
+               && self.gfx_render.offscreen_texture_b.is_some()
+          {
+               &postpass_texture.view
+          }
+          else
           {
                &surface_view
           };

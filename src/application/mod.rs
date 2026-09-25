@@ -84,6 +84,7 @@ fn init()
                env::set_var("RUST_LOG", "info");
           }
      };
+
      env_logger::init();
      log::warn!("Application started");
 }

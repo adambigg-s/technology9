@@ -1,6 +1,7 @@
 use std::time;
 
 pub mod aabb;
+pub mod do_in_debug;
 pub mod camera;
 pub mod interp;
 pub mod kinematics;
