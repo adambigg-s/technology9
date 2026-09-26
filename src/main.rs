@@ -1,6 +1,7 @@
 pub mod application;
 pub mod engine;
 pub mod entry;
+pub mod pipelines;
 pub mod render;
 pub mod terrain;
 pub mod visual;

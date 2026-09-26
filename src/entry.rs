@@ -7,11 +7,13 @@ use crate::engine::camera;
 use crate::engine::kinematics;
 use crate::engine::model;
 use crate::engine::player;
+use crate::pipelines;
 use crate::render::GfxCamera;
 use crate::render::GfxVertex;
 use crate::render::resource;
 use crate::render::util;
 use crate::render::{self};
+use crate::visual::skybox;
 
 #[derive(bon::Builder)]
 pub struct State
@@ -84,7 +86,7 @@ impl render::GfxPipeline for TriPipeline
                     topology: wgpu::PrimitiveTopology::TriangleList,
                     strip_index_format: None,
                     front_face: wgpu::FrontFace::Ccw,
-                    cull_mode: None,
+                    cull_mode: Some(wgpu::Face::Back),
                     unclipped_depth: false,
                     polygon_mode: wgpu::PolygonMode::Fill,
                     conservative: false,
@@ -168,7 +170,7 @@ impl application::Application for State
           .load_as(|v| {
                TriVertex {
                     pos: v.pos,
-                    col: glam::vec3(v.tex.x, v.tex.y, 1.0),
+                    col: v.nor,
                }
           })?[0]
                .clone();
@@ -199,6 +201,28 @@ impl application::Application for State
 
           rnd.register_bind_group(ctx, "global_bg", "global_bg_layout", &["camera_vp_uni"]);
           rnd.register_pipeline::<TriPipeline>(ctx, "tri_pipe", &["global_bg_layout"]);
+
+          let mut skybox = skybox::Skybox::new("./res/textures/skybox/", 32, 1000.0)?;
+          rnd.register_mesh("skybox_mesh", skybox.create_gfx_mesh(ctx));
+          rnd.register_bind_group_layout(
+               ctx,
+               "skybox_bg_layout",
+               &[
+                    resource::GfxBindingLayout::Texture,
+                    resource::GfxBindingLayout::Sampler,
+               ],
+          )?;
+          rnd.register_resource("skybox_sampler", util::sampler(ctx, "Skybox sampler"));
+          rnd.register_resource(
+               "skybox_tex",
+               util::texture_image(ctx, &skybox.texture.atlas, "Skybox texture"),
+          );
+          rnd.register_bind_group(ctx, "skybox_bg", "skybox_bg_layout", &["skybox_tex", "skybox_sampler"])?;
+          rnd.register_pipeline::<pipelines::SkyboxPipe>(
+               ctx,
+               "skybox_pipe",
+               &["global_bg_layout", "skybox_bg_layout"],
+          );
 
           Ok(Self {
                camera,
@@ -288,6 +312,12 @@ impl application::Application for State
                mesh: "model_mesh".to_string(),
                pipe: "tri_pipe".to_string(),
                bind_groups: vec!["global_bg".to_string()],
+          });
+
+          rnd.queue(render::GfxDrawCall {
+               mesh: "skybox_mesh".to_string(),
+               pipe: "skybox_pipe".to_string(),
+               bind_groups: vec!["global_bg".to_string(), "skybox_bg".to_string()],
           });
      }
 }

@@ -2,6 +2,7 @@ use std::fs;
 
 use anyhow::anyhow;
 
+use crate::engine::transform;
 use crate::render::mesh;
 use crate::render::util;
 use crate::render::{self};
@@ -40,18 +41,20 @@ impl render::GfxVertex for ModelVertex
      }
 }
 
-#[derive(bon::Builder, Debug)]
-pub struct LoadedModel
+#[derive(bon::Builder, Debug, Default)]
+pub struct ModelSegment
 {
      pub vertices: Vec<ModelVertex>,
      pub indices: Vec<u32>,
+     pub transform: transform::Transform,
 }
 
 #[derive(bon::Builder, Debug)]
 pub struct ModelOptions
 {
-     single_index: bool,
-     triangulate: bool,
+     pub single_index: bool,
+     pub triangulate: bool,
+     pub transform: transform::Transform,
 }
 
 impl Default for ModelOptions
@@ -61,6 +64,7 @@ impl Default for ModelOptions
           Self {
                single_index: true,
                triangulate: true,
+               transform: transform::Transform::identity(),
           }
      }
 }
@@ -108,7 +112,7 @@ impl<'l> ModelLoader<'l>
                .collect())
      }
 
-     pub fn raw_loaded_model(&self) -> anyhow::Result<Vec<LoadedModel>>
+     pub fn raw_loaded_model(&self) -> anyhow::Result<Vec<ModelSegment>>
      {
           let (models, _) = tobj::load_obj(
                self.find_model_path()?.path(),
@@ -146,13 +150,19 @@ impl<'l> ModelLoader<'l>
                     });
                });
 
-               meshes.push(LoadedModel {
+               meshes.push(ModelSegment {
                     vertices,
                     indices: mesh.indices,
+                    transform: self.options.transform,
                });
           });
 
           Ok(meshes)
+     }
+
+     pub fn load_textures(&self, gfx_render: &mut render::GfxRenderer) -> anyhow::Result<()>
+     {
+          Ok(())
      }
 
      fn find_model_path(&self) -> anyhow::Result<fs::DirEntry>
@@ -167,4 +177,15 @@ impl<'l> ModelLoader<'l>
                .ok_or_else(|| anyhow!("Directory doesn't contain a valid model"))?;
           Ok(path)
      }
+
+     fn find_model_texture_paths(&self) -> anyhow::Result<Vec<fs::DirEntry>>
+     {
+          todo!()
+     }
+}
+
+#[derive(bon::Builder, Debug, Default)]
+pub struct ModelEntity
+{
+     pub segments: Vec<ModelSegment>,
 }
