@@ -16,10 +16,10 @@ pub mod transform;
 #[derive(bon::Builder, Debug)]
 pub struct FrameData
 {
-     pub dt: f32,
-     pub time: f32,
-     pub instant: time::Instant,
-     pub tick: usize,
+     dt: f32,
+     time: f32,
+     instant: time::Instant,
+     tick: usize,
 }
 
 impl FrameData
@@ -35,6 +35,26 @@ impl FrameData
           self.time += self.dt;
           self.instant = time::Instant::now();
           self.tick += 1;
+     }
+
+     pub fn dt(&self) -> f32
+     {
+          self.dt
+     }
+
+     pub fn time(&self) -> f32
+     {
+          self.time
+     }
+
+     pub fn instant(&self) -> time::Instant
+     {
+          self.instant
+     }
+
+     pub fn tick(&self) -> usize
+     {
+          self.tick
      }
 }
 

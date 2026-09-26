@@ -43,7 +43,6 @@ impl render::GfxVertex for TerrainVertex
               4 => Float32,
               5 => Float32,
           ];
-
           wgpu::VertexBufferLayout {
                array_stride: mem::size_of::<Self>() as u64,
                step_mode: wgpu::VertexStepMode::Vertex,

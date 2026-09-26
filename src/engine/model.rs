@@ -160,9 +160,10 @@ impl<'l> ModelLoader<'l>
           Ok(meshes)
      }
 
+     #[allow(unused)]
      pub fn load_textures(&self, gfx_render: &mut render::GfxRenderer) -> anyhow::Result<()>
      {
-          Ok(())
+          todo!()
      }
 
      fn find_model_path(&self) -> anyhow::Result<fs::DirEntry>
@@ -178,6 +179,7 @@ impl<'l> ModelLoader<'l>
           Ok(path)
      }
 
+     #[allow(unused)]
      fn find_model_texture_paths(&self) -> anyhow::Result<Vec<fs::DirEntry>>
      {
           todo!()

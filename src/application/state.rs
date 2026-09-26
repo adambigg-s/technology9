@@ -187,8 +187,8 @@ where
                &mut encoder,
           );
 
-          let render_target = if let Some(postpass_texture) = &self.gfx_render.offscreen_texture_a
-               && self.gfx_render.offscreen_texture_b.is_some()
+          let render_target = if let Some(postpass_texture) = &self.gfx_render.front_texture()
+               && self.gfx_render.back_texture().is_some()
           {
                &postpass_texture.view
           }
@@ -209,7 +209,7 @@ where
                               store: wgpu::StoreOp::Store,
                          },
                     })],
-                    depth_stencil_attachment: match &self.gfx_render.depth_texture
+                    depth_stencil_attachment: match &self.gfx_render.depth_texture()
                     {
                          | Some(depth_texture) =>
                          {

@@ -1,4 +1,5 @@
 use std::fs;
+use std::sync;
 
 use crate::application;
 use crate::application::input;
@@ -13,14 +14,20 @@ use crate::render::GfxVertex;
 use crate::render::resource;
 use crate::render::util;
 use crate::render::{self};
+use crate::terrain;
+use crate::visual::atlas;
 use crate::visual::skybox;
+use crate::world::loader;
 
 #[derive(bon::Builder)]
 pub struct State
 {
      pub frame: engine::FrameData,
+
      pub camera: camera::Camera,
      pub player_controller: player::PlayerController,
+
+     pub recti_world: loader::ChunkLoader,
 }
 
 #[repr(C)]
@@ -115,7 +122,6 @@ impl render::GfxPipeline for TriPipeline
      }
 }
 
-#[allow(unused)]
 impl application::Application for State
 {
      fn config() -> application::Config
@@ -131,8 +137,11 @@ impl application::Application for State
 
      fn setup(ctx: &mut render::GfxContext, rnd: &mut render::GfxRenderer) -> anyhow::Result<Self>
      {
-          rnd.enable_depth(ctx, true);
-          rnd.enable_offscreen(ctx, false);
+          // State configuration
+          {
+               rnd.enable_depth(ctx, true)?;
+               rnd.enable_offscreen(ctx, false)?;
+          }
 
           rnd.clear_color = wgpu::Color {
                r: 25.0 / 255.0,
@@ -162,6 +171,24 @@ impl application::Application for State
                ),
           );
 
+          // Rectilinear assets
+          let diffuse_atlas = sync::Arc::new(atlas::TextureAtlas::new("./res/textures/liminal", 128)?);
+          rnd.register_resource(
+               "diffuse_atlas",
+               util::texture_image_mipmap(ctx, &diffuse_atlas.atlas, "Diffuse atlas"),
+          );
+          rnd.register_resource("sampler_atlas", util::sampler_mipmap(ctx, "Atlas sampler"));
+          let terrain = sync::Arc::new(terrain::TerrainGenerator::new(0));
+          let mut recti_world = loader::ChunkLoader::builder()
+               .atlas(sync::Arc::clone(&diffuse_atlas))
+               .terrain(sync::Arc::clone(&terrain))
+               .view_distance(255)
+               .view_coefficient(glam::usizevec3(1, 1, 1))
+               .chunk_height(32)
+               .chunk_width(32)
+               .build();
+          recti_world.spawn_workers(1);
+
           let penguin_mesh = model::ModelLoader {
                path: "./res/models/penguin",
                context: ctx,
@@ -176,12 +203,21 @@ impl application::Application for State
                .clone();
           rnd.register_mesh("model_mesh", penguin_mesh);
 
-          rnd.register_bind_group_layout(ctx, "global_bg_layout", &[resource::GfxBindingLayout::Uniform]);
+          rnd.register_bind_group_layout(
+               ctx,
+               "global_bg_layout",
+               &[
+                    resource::GfxBindingLayout::Uniform,
+                    resource::GfxBindingLayout::Texture,
+                    resource::GfxBindingLayout::Sampler,
+               ],
+          )?;
+          rnd.register_pipeline::<pipelines::RectiPipeline>(ctx, "recti_pipe", &["global_bg_layout"]);
 
           let camera = camera::Camera::builder()
                .fov(75.0f32)
                .ar(ctx.config.width as f32 / ctx.config.height as f32)
-               .zfear(500.0)
+               .zfear(1000.0)
                .znear(0.1)
                .build();
           rnd.register_resource("camera_vp_uni", util::uniform::<glam::Mat4>(ctx, "Camera view-proj matrix"));
@@ -199,10 +235,16 @@ impl application::Application for State
 
           let frame = engine::FrameData::new();
 
-          rnd.register_bind_group(ctx, "global_bg", "global_bg_layout", &["camera_vp_uni"]);
+          rnd.register_bind_group(
+               ctx,
+               "global_bg",
+               "global_bg_layout",
+               &["camera_vp_uni", "diffuse_atlas", "sampler_atlas"],
+          )?;
           rnd.register_pipeline::<TriPipeline>(ctx, "tri_pipe", &["global_bg_layout"]);
 
-          let mut skybox = skybox::Skybox::new("./res/textures/skybox/", 32, 1000.0)?;
+          // Skybox stuff
+          let mut skybox = skybox::Skybox::new("./res/textures/skybox/", 32, 10_000.0)?;
           rnd.register_mesh("skybox_mesh", skybox.create_gfx_mesh(ctx));
           rnd.register_bind_group_layout(
                ctx,
@@ -228,6 +270,7 @@ impl application::Application for State
                camera,
                player_controller,
                frame,
+               recti_world,
           })
      }
 
@@ -239,10 +282,13 @@ impl application::Application for State
      )
      {
           self.frame.update();
+          self.recti_world.update_chunks(self.camera.inner.position, self.frame.dt());
+          self.camera.ar = ctx.config.width as f32 / ctx.config.height as f32;
 
           if input.get_key_pres("escape")
           {
                input.request_quit = true;
+               log::info!("{}", self.recti_world.chunk_map.telem);
           }
 
           if input.consume_key_press("keyq")
@@ -277,8 +323,8 @@ impl application::Application for State
           }
           [dx, dy, dz] = (glam::vec3(dx, dy, dz).normalize_or_zero()
                * self.player_controller.movespeed
-               * self.frame.dt)
-               .to_array();
+               * self.frame.dt())
+          .to_array();
           self.camera.update_position(dx, dy, dz);
 
           let [mut dy, mut dx] = input.consume_mouse_delta().into();
@@ -289,6 +335,8 @@ impl application::Application for State
           self.camera.inner.rotation = glam::Quat::from_rotation_z(0.0)
                * glam::Quat::from_rotation_y(self.camera.yaw)
                * glam::Quat::from_rotation_x(self.camera.pitch);
+
+          _ = (input, ctx, rnd);
      }
 
      fn gfx_frame(
@@ -298,10 +346,12 @@ impl application::Application for State
           rnd: &mut render::GfxRenderer,
      )
      {
-          if let Some(resource::GfxResource::Uniform(camera_mvp)) = rnd.resources.get("camera_vp_uni")
+          if let Some(resource::GfxResource::Uniform(camera_mvp)) = rnd.get_resource("camera_vp_uni")
           {
                camera_mvp.write(ctx, &self.camera.view_proj());
           }
+
+          self.recti_world.sync_gfx_chunks(ctx, rnd);
 
           rnd.queue(render::GfxDrawCall {
                mesh: "tri_mesh".to_string(),
@@ -313,11 +363,24 @@ impl application::Application for State
                pipe: "tri_pipe".to_string(),
                bind_groups: vec!["global_bg".to_string()],
           });
-
           rnd.queue(render::GfxDrawCall {
                mesh: "skybox_mesh".to_string(),
                pipe: "skybox_pipe".to_string(),
                bind_groups: vec!["global_bg".to_string(), "skybox_bg".to_string()],
           });
+          self.recti_world.render_chunks.iter().for_each(|&chunk_coord| {
+               rnd.queue(render::GfxDrawCall {
+                    mesh: loader::ChunkLoader::chunk_key(chunk_coord),
+                    pipe: "recti_pipe".into(),
+                    bind_groups: vec!["global_bg".into()],
+               });
+          });
+
+          _ = (input, ctx, rnd);
+     }
+
+     fn immediate_ui(&mut self, gui: &mut application::gui::GuiContext)
+     {
+          _ = (gui, ());
      }
 }

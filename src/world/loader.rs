@@ -860,4 +860,3 @@ impl kinematics::Collision for ChunkLoader
           false
      }
 }
-

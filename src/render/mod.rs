@@ -129,23 +129,23 @@ pub struct GfxDrawCall
 pub struct GfxRenderer
 {
      #[builder(default)]
-     pub bind_group_layouts: rh::FxHashMap<String, wgpu::BindGroupLayout>,
+     bind_group_layouts: rh::FxHashMap<String, wgpu::BindGroupLayout>,
 
      #[builder(default)]
-     pub bind_groups: rh::FxHashMap<String, wgpu::BindGroup>,
+     bind_groups: rh::FxHashMap<String, wgpu::BindGroup>,
 
      #[builder(default)]
-     pub pipelines: rh::FxHashMap<String, wgpu::RenderPipeline>,
+     pipelines: rh::FxHashMap<String, wgpu::RenderPipeline>,
 
      #[builder(default)]
-     pub meshes: rh::FxHashMap<String, mesh::GfxMesh>,
+     meshes: rh::FxHashMap<String, mesh::GfxMesh>,
 
      #[builder(default)]
-     pub resources: rh::FxHashMap<String, resource::GfxResource>,
+     resources: rh::FxHashMap<String, resource::GfxResource>,
 
-     pub depth_texture: Option<resource::GfxTexture>,
-     pub offscreen_texture_a: Option<resource::GfxTexture>,
-     pub offscreen_texture_b: Option<resource::GfxTexture>,
+     depth_texture: Option<resource::GfxTexture>,
+     offscreen_texture_a: Option<resource::GfxTexture>,
+     offscreen_texture_b: Option<resource::GfxTexture>,
 
      #[builder(default)]
      pub render_queue: Vec<GfxDrawCall>,
@@ -262,13 +262,25 @@ impl GfxRenderer
           let entries = resource_names
                .iter()
                .enumerate()
-               .map(|(index, &resource_name)| self.resources[resource_name].get_bind_group(index as u32))
-               .collect::<Vec<wgpu::BindGroupEntry>>();
+               .map(|(index, &resource_name)| {
+                    Ok(self
+                         .resources
+                         .get(resource_name)
+                         .ok_or_else(|| {
+                              anyhow::anyhow!(
+                                   "Resource {} not found in registry. Avaliable resources: {:?}",
+                                   resource_name,
+                                   self.resources.keys().collect::<Vec<&String>>()
+                              )
+                         })?
+                         .get_bind_group(index as u32))
+               })
+               .collect::<anyhow::Result<Vec<wgpu::BindGroupEntry>>>();
 
           let bind_group = context.device.create_bind_group(&wgpu::BindGroupDescriptor {
                label: Some(&format!("{} bind group", name)),
                layout,
-               entries: &entries,
+               entries: &entries?,
           });
 
           self.bind_groups.insert(name.into(), bind_group);
@@ -325,6 +337,71 @@ impl GfxRenderer
      pub fn back_texture_mut(&mut self) -> &mut Option<resource::GfxTexture>
      {
           &mut self.offscreen_texture_b
+     }
+
+     pub fn front_texture(&self) -> &Option<resource::GfxTexture>
+     {
+          &self.offscreen_texture_a
+     }
+
+     pub fn back_texture(&self) -> &Option<resource::GfxTexture>
+     {
+          &self.offscreen_texture_b
+     }
+
+     pub fn depth_texture(&self) -> &Option<resource::GfxTexture>
+     {
+          &self.depth_texture
+     }
+
+     pub fn get_bg_layout(&self, name: &str) -> Option<&wgpu::BindGroupLayout>
+     {
+          self.bind_group_layouts.get(name)
+     }
+
+     pub fn get_bind_group(&self, name: &str) -> Option<&wgpu::BindGroup>
+     {
+          self.bind_groups.get(name)
+     }
+
+     pub fn get_pipeline(&self, name: &str) -> Option<&wgpu::RenderPipeline>
+     {
+          self.pipelines.get(name)
+     }
+
+     pub fn get_mesh(&self, name: &str) -> Option<&mesh::GfxMesh>
+     {
+          self.meshes.get(name)
+     }
+
+     pub fn get_resource(&self, name: &str) -> Option<&resource::GfxResource>
+     {
+          self.resources.get(name)
+     }
+
+     pub fn get_bg_layout_mut(&mut self, name: &str) -> Option<&mut wgpu::BindGroupLayout>
+     {
+          self.bind_group_layouts.get_mut(name)
+     }
+
+     pub fn get_bind_group_mut(&mut self, name: &str) -> Option<&mut wgpu::BindGroup>
+     {
+          self.bind_groups.get_mut(name)
+     }
+
+     pub fn get_pipeline_mut(&mut self, name: &str) -> Option<&mut wgpu::RenderPipeline>
+     {
+          self.pipelines.get_mut(name)
+     }
+
+     pub fn get_mesh_mut(&mut self, name: &str) -> Option<&mut mesh::GfxMesh>
+     {
+          self.meshes.get_mut(name)
+     }
+
+     pub fn get_resource_mut(&mut self, name: &str) -> Option<&mut resource::GfxResource>
+     {
+          self.resources.get_mut(name)
      }
 
      pub fn render(&mut self, render_pass: &mut wgpu::RenderPass)

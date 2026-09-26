@@ -13,8 +13,22 @@ impl TerrainGenerator
           Self {}
      }
 
-     pub fn form_chunk(&self, _chunk: &mut chunk::Chunk) -> delta::BlockDeltas
+     pub fn form_chunk(&self, chunk: &mut chunk::Chunk) -> delta::BlockDeltas
      {
-          todo!()
+          let out_deltas = delta::BlockDeltas::new();
+          if chunk.world_position().y != 0
+          {
+               return out_deltas;
+          }
+
+          for i in 0 .. chunk.width()
+          {
+               for j in 0 .. chunk.width()
+               {
+                    *chunk.get_mut(glam::ivec3(i as i32, 0, j as i32)) = crate::world::block::Block::Plain;
+               }
+          }
+
+          out_deltas
      }
 }

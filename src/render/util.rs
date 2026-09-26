@@ -78,7 +78,7 @@ pub fn sampler_mipmap(context: &render::GfxContext, label: &str) -> resource::Gf
           min_filter: wgpu::FilterMode::Nearest,
           mipmap_filter: wgpu::MipmapFilterMode::Linear,
           lod_min_clamp: 0.0,
-          lod_max_clamp: 4.0,
+          lod_max_clamp: 32.0,
           anisotropy_clamp: 1,
           ..Default::default()
      }))
