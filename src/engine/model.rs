@@ -180,7 +180,17 @@ impl<'l> ModelLoader<'l>
 
                     Ok(meshes)
                }
-               | ModelType::Gltf => todo!(),
+               #[allow(unused)]
+               | ModelType::Gltf =>
+               {
+                    let (document, buffers, images) = gltf::import(metadata.path)?;
+
+                    for mesh in document.meshes() {
+
+                    }
+
+                    anyhow::bail!("Cooked")
+               }
           }
      }
 
@@ -228,13 +238,13 @@ impl<'l> ModelLoader<'l>
                })
                .ok_or_else(|| anyhow!("Directory doesn't contain a valid model"))?;
 
-          if let Some(found) = found
+          match found
           {
-               Ok(found)
-          }
-          else
-          {
-               anyhow::Result::Err(anyhow::anyhow!("A model wasn't found"))
+               | Some(found) => Ok(found),
+               | None =>
+               {
+                    anyhow::bail!("A model wasn't found");
+               }
           }
      }
 

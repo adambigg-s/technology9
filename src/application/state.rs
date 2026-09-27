@@ -4,16 +4,18 @@ use std::sync::mpsc;
 
 use winit::window;
 
+use crate::application::gui;
 use crate::application::input;
 use crate::application::{self};
 use crate::render;
 
-#[derive(bon::Builder, Debug)]
+#[derive(bon::Builder)]
 pub struct State<Inner>
 {
      pub window: sync::Arc<window::Window>,
      pub gfx_context: render::GfxContext,
      pub gfx_render: render::GfxRenderer,
+     pub gui_context: gui::GuiContext,
      pub input: input::Input,
      pub inner_state: Inner,
 }
@@ -28,6 +30,8 @@ where
 
           let mut gfx_render = render::GfxRenderer::new(&gfx_context)?;
 
+          let gui_context = pollster::block_on(gui::GuiContext::new())?;
+
           let input = input::Input::new();
 
           let inner_state = Inner::setup(&mut gfx_context, &mut gfx_render)?;
@@ -36,6 +40,7 @@ where
                window,
                gfx_context,
                gfx_render,
+               gui_context,
                input,
                inner_state,
           })

@@ -11,7 +11,7 @@ use crate::application::input;
 use crate::application::state;
 use crate::application::{self};
 
-#[derive(bon::Builder, Debug, Default)]
+#[derive(bon::Builder, Default)]
 pub struct ApplicationRunner<Inner>
 {
      pub inner: Option<state::State<Inner>>,
@@ -284,6 +284,12 @@ where
                               state.window.set_cursor_grab(window::CursorGrabMode::None).unwrap();
                               state.window.set_cursor_visible(true);
                               state.input.consume_mouse_delta();
+                              state.input.request_fullscreen = false;
+                         }
+                         | input::MouseMode::Confine =>
+                         {
+                              state.window.set_cursor_grab(window::CursorGrabMode::Confined).unwrap();
+                              state.window.set_cursor_visible(true);
                               state.input.request_fullscreen = false;
                          }
                     }

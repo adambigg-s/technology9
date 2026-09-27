@@ -3,13 +3,15 @@ use std::ops;
 
 use winit::keyboard;
 
-#[derive(Debug, Default, Clone, Copy)]
+use crate::debexecute;
+
+#[derive(Debug, Clone, Copy)]
 pub enum MouseMode
 {
-     #[default]
      None,
      Grab,
      Free,
+     Confine,
 }
 
 impl MouseMode
@@ -18,10 +20,23 @@ impl MouseMode
      {
           match self
           {
-               | MouseMode::Grab => MouseMode::Free,
                | MouseMode::None => MouseMode::Grab,
-               | MouseMode::Free => MouseMode::None,
+               | MouseMode::Grab => MouseMode::Free,
+               | MouseMode::Free => MouseMode::Confine,
+               | MouseMode::Confine => MouseMode::None,
           }
+     }
+}
+
+impl Default for MouseMode
+{
+     #[allow(unreachable_code)]
+     fn default() -> Self
+     {
+          debexecute!({
+               return MouseMode::Confine;
+          });
+          MouseMode::None
      }
 }
 
