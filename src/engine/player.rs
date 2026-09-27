@@ -268,7 +268,6 @@ impl PlayerSoundController
                self.last_sound_time = time;
           }
      }
-
 }
 
 #[derive(bon::Builder, Debug)]
@@ -349,6 +348,7 @@ impl PlayerInterpolator
           {
                self.current = self.current.min(self.target);
           }
+          // self.current = self.current.clamp(self.target, self.target);
           self.current
      }
 }

@@ -1,4 +1,5 @@
 use std::fs;
+use std::path;
 
 use anyhow::anyhow;
 
@@ -7,7 +8,7 @@ use crate::render::mesh;
 use crate::render::util;
 use crate::render::{self};
 
-pub const MODEL_EXTS: &[&str] = &["obj"];
+pub const MODEL_EXTS: &[&str] = &["obj", "gltf"];
 pub const MODEL_TEX_EXTS: &[&str] = &["jpg", "tiff", "png"];
 
 #[repr(C)]
@@ -69,6 +70,20 @@ impl Default for ModelOptions
      }
 }
 
+#[derive(Debug)]
+pub enum ModelType
+{
+     Obj,
+     Gltf,
+}
+
+#[derive(bon::Builder, Debug)]
+pub struct ModelMetadata
+{
+     pub path: path::PathBuf,
+     pub mtype: ModelType,
+}
+
 #[derive(bon::Builder, Debug)]
 pub struct ModelLoader<'l>
 {
@@ -114,50 +129,59 @@ impl<'l> ModelLoader<'l>
 
      pub fn raw_loaded_model(&self) -> anyhow::Result<Vec<ModelSegment>>
      {
-          let (models, _) = tobj::load_obj(
-               self.find_model_path()?.path(),
-               &tobj::LoadOptions {
-                    single_index: self.options.single_index,
-                    triangulate: self.options.triangulate,
-                    ignore_points: false,
-                    ignore_lines: false,
-               },
-          )?;
+          let metadata = self.find_model_path()?;
 
-          let mut meshes = Vec::new();
-          models.into_iter().for_each(|model| {
-               let mesh = model.mesh;
-               let mut vertices = Vec::new();
+          match metadata.mtype
+          {
+               | ModelType::Obj =>
+               {
+                    let (models, _) = tobj::load_obj(
+                         metadata.path,
+                         &tobj::LoadOptions {
+                              single_index: self.options.single_index,
+                              triangulate: self.options.triangulate,
+                              ignore_points: false,
+                              ignore_lines: false,
+                         },
+                    )?;
 
-               (0 .. mesh.positions.len() / 3).for_each(|idx| {
-                    #[rustfmt::skip]
-                    #[allow(clippy::identity_op)]
-                    vertices.push(ModelVertex {
-                         pos: glam::vec3(
-                              mesh.positions[idx * 3 + 0],
-                              mesh.positions[idx * 3 + 1],
-                              mesh.positions[idx * 3 + 2],
-                         ),
-                         nor: glam::vec3(
-                              mesh.normals[idx * 3 + 0],
-                              mesh.normals[idx * 3 + 1],
-                              mesh.normals[idx * 3 + 2],
-                         ),
-                         tex: glam::vec2(
-                              mesh.texcoords[idx * 2 + 0],
-                              mesh.texcoords[idx * 2 + 1],
-                         ),
+                    let mut meshes = Vec::new();
+                    models.into_iter().for_each(|model| {
+                         let mesh = model.mesh;
+                         let mut vertices = Vec::new();
+
+                         (0 .. mesh.positions.len() / 3).for_each(|idx| {
+                              #[rustfmt::skip]
+                         #[allow(clippy::identity_op)]
+                         vertices.push(ModelVertex {
+                              pos: glam::vec3(
+                                   mesh.positions[idx * 3 + 0],
+                                   mesh.positions[idx * 3 + 1],
+                                   mesh.positions[idx * 3 + 2],
+                              ),
+                              nor: glam::vec3(
+                                   mesh.normals[idx * 3 + 0],
+                                   mesh.normals[idx * 3 + 1],
+                                   mesh.normals[idx * 3 + 2],
+                              ),
+                              tex: glam::vec2(
+                                   mesh.texcoords[idx * 2 + 0],
+                                   mesh.texcoords[idx * 2 + 1],
+                              ),
+                         });
+                         });
+
+                         meshes.push(ModelSegment {
+                              vertices,
+                              indices: mesh.indices,
+                              transform: self.options.transform,
+                         });
                     });
-               });
 
-               meshes.push(ModelSegment {
-                    vertices,
-                    indices: mesh.indices,
-                    transform: self.options.transform,
-               });
-          });
-
-          Ok(meshes)
+                    Ok(meshes)
+               }
+               | ModelType::Gltf => todo!(),
+          }
      }
 
      #[allow(unused)]
@@ -166,17 +190,52 @@ impl<'l> ModelLoader<'l>
           todo!()
      }
 
-     fn find_model_path(&self) -> anyhow::Result<fs::DirEntry>
+     fn find_model_path(&self) -> anyhow::Result<ModelMetadata>
      {
-          let path = fs::read_dir(self.path)?
+          let mut found = None;
+          let _ = fs::read_dir(self.path)?
                .filter_map(Result::ok)
                .find(|entry| {
                     entry.path().extension().is_some_and(|extension| {
-                         MODEL_EXTS.iter().any(|ext| extension.eq_ignore_ascii_case(ext))
+                         match extension.to_str()
+                         {
+                              | Some(extension) =>
+                              {
+                                   match extension
+                                   {
+                                        | "obj" =>
+                                        {
+                                             found = Some(ModelMetadata {
+                                                  path: entry.path(),
+                                                  mtype: ModelType::Obj,
+                                             });
+                                             true
+                                        }
+                                        | "gltf" =>
+                                        {
+                                             found = Some(ModelMetadata {
+                                                  path: entry.path(),
+                                                  mtype: ModelType::Gltf,
+                                             });
+                                             true
+                                        }
+                                        | _ => false,
+                                   }
+                              }
+                              | None => false,
+                         }
                     })
                })
                .ok_or_else(|| anyhow!("Directory doesn't contain a valid model"))?;
-          Ok(path)
+
+          if let Some(found) = found
+          {
+               Ok(found)
+          }
+          else
+          {
+               anyhow::Result::Err(anyhow::anyhow!("A model wasn't found"))
+          }
      }
 
      #[allow(unused)]

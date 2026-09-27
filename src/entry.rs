@@ -6,6 +6,7 @@ use crate::application::input;
 use crate::engine;
 use crate::engine::camera;
 use crate::engine::kinematics;
+use crate::engine::kinematics::Collision;
 use crate::engine::model;
 use crate::engine::player;
 use crate::pipelines;
@@ -26,6 +27,8 @@ pub struct State
 
      pub camera: camera::Camera,
      pub player_controller: player::PlayerController,
+     pub player_sprinter: player::PlayerSprinter,
+     pub player_croucher: player::PlayerInterpolator,
 
      pub recti_world: loader::ChunkLoader,
 }
@@ -182,7 +185,7 @@ impl application::Application for State
           let mut recti_world = loader::ChunkLoader::builder()
                .atlas(sync::Arc::clone(&diffuse_atlas))
                .terrain(sync::Arc::clone(&terrain))
-               .view_distance(255)
+               .view_distance(128)
                .view_coefficient(glam::usizevec3(1, 1, 1))
                .chunk_height(32)
                .chunk_width(32)
@@ -220,16 +223,26 @@ impl application::Application for State
                .zfear(1000.0)
                .znear(0.1)
                .build();
+          let player_sprinter = player::PlayerSprinter::builder()
+               .movespeed_modifier(1.75)
+               .stamina(100.0)
+               .max_stamina(100.0)
+               .stamina_drain(20.0)
+               .stamina_regen(25.0)
+               .run_thresh(40.0)
+               .exhausted(false)
+               .build();
+          let player_croucher = player::PlayerInterpolator::new(0.0);
           rnd.register_resource("camera_vp_uni", util::uniform::<glam::Mat4>(ctx, "Camera view-proj matrix"));
 
           let player_controller = player::PlayerController::builder()
-               .collisions(false)
+               .collisions(true)
                .collider(kinematics::BoxCollider::point_sides(
                     camera.inner.position.to_array(),
                     [0.45, 0.85, 0.45],
                ))
                .kinematics(kinematics::Kinematics::builder().up(glam::Vec3::Y).build())
-               .movespeed(4.8 * 2.0f32.powf(2.0))
+               .movespeed(4.0 * 2f32.powf(3.0))
                .lookspeed(0.00125)
                .build();
 
@@ -267,9 +280,13 @@ impl application::Application for State
           );
 
           Ok(Self {
+               frame,
+
                camera,
                player_controller,
-               frame,
+               player_sprinter,
+               player_croucher,
+
                recti_world,
           })
      }
@@ -296,36 +313,113 @@ impl application::Application for State
                input.request_grab = !input.request_grab;
           }
 
-          let [mut dx, mut dy, mut dz] = [0.0; 3];
-          if input.get_key_pres("keyw")
+          if input.consume_key_press("keyy")
           {
-               dz += 1.0;
+               self.player_controller.collisions = !self.player_controller.collisions;
           }
-          if input.get_key_pres("keys")
+
+          match self.player_controller.collisions
           {
-               dz -= 1.0;
+               | true =>
+               {
+                    if self.recti_world.collides(self.player_controller.collider)
+                    {
+                         self.player_controller.jiggle_free(&self.recti_world);
+                    }
+
+                    let camera_offset = 0.65;
+                    let mut frame_movement_speed = self.player_controller.movespeed;
+                    let [mut dx, _, mut dz] = [0.0; 3];
+                    if input.get_key_pres("keyw")
+                    {
+                         dz += 1.0;
+                    }
+                    if input.get_key_pres("keys")
+                    {
+                         dz -= 1.0;
+                    }
+                    if input.get_key_pres("keyd")
+                    {
+                         dx += 1.0;
+                    }
+                    if input.get_key_pres("keya")
+                    {
+                         dx -= 1.0;
+                    }
+                    if input.get_key_pres("space")
+                    {
+                         self.player_controller.kinematics.jump(8.0);
+                    }
+                    if input.get_key_pres("shiftleft")
+                    {
+                         frame_movement_speed *= self.player_sprinter.player_speed(self.frame.dt(), true);
+                    }
+                    else
+                    {
+                         frame_movement_speed *= self.player_sprinter.player_speed(self.frame.dt(), false);
+                    }
+                    if input.get_key_pres("controlleft")
+                    {
+                         self.player_croucher.set_target(camera_offset / 3.0, 0.1);
+                         frame_movement_speed /= 2.0;
+                    }
+                    else
+                    {
+                         self.player_croucher.set_target(camera_offset, 0.1);
+                    }
+                    self.player_croucher.update(self.frame.dt());
+
+                    let forward = self.camera.inner.forward().with_y(0.0).normalize_or_zero();
+                    let right = self.camera.inner.right().with_y(0.0).normalize_or_zero();
+                    let movement = (right * dx + forward * dz).normalize_or_zero();
+                    self.player_controller.kinematics.velocity.x +=
+                         movement.x * frame_movement_speed * self.frame.dt();
+                    self.player_controller.kinematics.velocity.z +=
+                         movement.z * frame_movement_speed * self.frame.dt();
+                    self.player_controller.kinematics.apply_gravity(28.0, self.frame.dt());
+                    self.player_controller.kinematics.apply_drag(8.0, self.frame.dt());
+                    self.player_controller.collider = self.player_controller.kinematics.translate(
+                         self.player_controller.collider,
+                         &self.recti_world,
+                         self.frame.dt(),
+                    );
+                    self.camera.inner.position = self.player_controller.collider.center()
+                         + glam::vec3(0.0, self.player_croucher.current, 0.0);
+               }
+               | false =>
+               {
+                    let [mut dx, mut dy, mut dz] = [0.0; 3];
+                    if input.get_key_pres("keyw")
+                    {
+                         dz += 1.0;
+                    }
+                    if input.get_key_pres("keys")
+                    {
+                         dz -= 1.0;
+                    }
+                    if input.get_key_pres("keyd")
+                    {
+                         dx += 1.0;
+                    }
+                    if input.get_key_pres("keya")
+                    {
+                         dx -= 1.0;
+                    }
+                    if input.get_key_pres("space")
+                    {
+                         dy += 1.0;
+                    }
+                    if input.get_key_pres("shiftleft")
+                    {
+                         dy -= 1.0;
+                    }
+                    [dx, dy, dz] = (glam::vec3(dx, dy, dz).normalize_or_zero()
+                         * self.player_controller.movespeed
+                         * self.frame.dt())
+                    .to_array();
+                    self.camera.update_position(dx, dy, dz);
+               }
           }
-          if input.get_key_pres("keyd")
-          {
-               dx += 1.0;
-          }
-          if input.get_key_pres("keya")
-          {
-               dx -= 1.0;
-          }
-          if input.get_key_pres("space")
-          {
-               dy += 1.0;
-          }
-          if input.get_key_pres("shiftleft")
-          {
-               dy -= 1.0;
-          }
-          [dx, dy, dz] = (glam::vec3(dx, dy, dz).normalize_or_zero()
-               * self.player_controller.movespeed
-               * self.frame.dt())
-          .to_array();
-          self.camera.update_position(dx, dy, dz);
 
           let [mut dy, mut dx] = input.consume_mouse_delta().into();
           [dy, dx] = (glam::vec2(dy, dx) * self.player_controller.lookspeed).to_array();

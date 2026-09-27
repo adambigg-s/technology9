@@ -16,7 +16,7 @@ impl TerrainGenerator
      pub fn form_chunk(&self, chunk: &mut chunk::Chunk) -> delta::BlockDeltas
      {
           let out_deltas = delta::BlockDeltas::new();
-          if chunk.world_position().y != 0
+          if chunk.world_position().y >= 0
           {
                return out_deltas;
           }
