@@ -90,7 +90,7 @@ impl render::GfxPipeline for TriPipeline
                     module: &shader,
                     entry_point: Some("vs_main"),
                     compilation_options: wgpu::PipelineCompilationOptions::default(),
-                    buffers: &[TriVertex::descriptor()],
+                    buffers: &[Some(TriVertex::descriptor())],
                },
                primitive: wgpu::PrimitiveState {
                     topology: wgpu::PrimitiveTopology::TriangleList,

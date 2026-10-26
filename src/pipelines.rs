@@ -31,7 +31,7 @@ impl render::GfxPipeline for SkyboxPipe
                     module: &shader,
                     entry_point: Some("vs_main"),
                     compilation_options: wgpu::PipelineCompilationOptions::default(),
-                    buffers: &[skybox::SkyboxVertex::descriptor()],
+                    buffers: &[Some(skybox::SkyboxVertex::descriptor())],
                },
                primitive: wgpu::PrimitiveState {
                     topology: wgpu::PrimitiveTopology::TriangleList,
@@ -92,7 +92,7 @@ impl render::GfxPipeline for RectiPipeline
                     module: &shader,
                     entry_point: Some("vs_main"),
                     compilation_options: wgpu::PipelineCompilationOptions::default(),
-                    buffers: &[mesher::TerrainVertex::descriptor()],
+                    buffers: &[Some(mesher::TerrainVertex::descriptor())],
                },
                primitive: wgpu::PrimitiveState {
                     topology: wgpu::PrimitiveTopology::TriangleList,

@@ -30,7 +30,11 @@ where
 
           let mut gfx_render = render::GfxRenderer::new(&gfx_context)?;
 
-          let gui_context = pollster::block_on(gui::GuiContext::new())?;
+          let gui_context = pollster::block_on(gui::GuiContext::new(
+               &gfx_context,
+               &gfx_render,
+               sync::Arc::clone(&window),
+          ))?;
 
           let input = input::Input::new();
 
@@ -130,7 +134,7 @@ where
           rx.recv().unwrap().unwrap();
 
           {
-               let data = buffer_slice.get_mapped_range();
+               let data = buffer_slice.get_mapped_range()?;
                let mut raw_pixels = Vec::new();
                data.chunks(row_padded_size as usize).for_each(|chunk| {
                     let unpadded_row = &chunk[.. unpadded as usize];
@@ -152,7 +156,8 @@ where
           };
 
           output_buffer.unmap();
-          surface_texture.present();
+
+          self.gfx_context.queue.present(surface_texture);
 
           Ok(())
      }
@@ -246,7 +251,8 @@ where
           );
 
           self.gfx_context.queue.submit([encoder.finish()]);
-          output.present();
+
+          self.gfx_context.queue.present(output);
 
           Ok(())
      }

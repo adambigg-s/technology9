@@ -62,6 +62,7 @@ impl GfxContext
                     power_preference: wgpu::PowerPreference::HighPerformance,
                     force_fallback_adapter: false,
                     compatible_surface: Some(&surface),
+                    apply_limit_buckets: false,
                })
                .await?;
           log::info!("Adapter information: {:?}", adapter.get_info());
@@ -98,6 +99,7 @@ impl GfxContext
                desired_maximum_frame_latency: 2,
                alpha_mode: surface_caps.alpha_modes[0],
                view_formats: Vec::new(),
+               color_space: wgpu::SurfaceColorSpace::Auto,
           };
           surface.configure(&device, &config);
 
