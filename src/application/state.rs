@@ -267,8 +267,10 @@ where
      ) -> anyhow::Result<Vec<wgpu::CommandBuffer>>
      {
           let raw_input = self.gui_context.state.take_egui_input(&self.window);
+
           let context = self.gui_context.context.clone();
           let gui_context = &mut self.gui_context;
+
           let full_output = context.run_ui(raw_input, |_| {
                self.inner_state.immediate_ui(gui_context);
           });
@@ -276,18 +278,16 @@ where
           self.gui_context.state.handle_platform_output(&self.window, full_output.platform_output);
 
           let mut textures_delta = full_output.textures_delta;
-          for (&id, deltas) in &textures_delta.set
-          {
-               for delta in deltas
-               {
+          textures_delta.set.iter().for_each(|(&id, deltas)| {
+               deltas.into_iter().for_each(|delta| {
                     self.gui_context.renderer.update_texture(
                          &self.gfx_context.device,
                          &self.gfx_context.queue,
                          id,
                          delta,
                     );
-               }
-          }
+               });
+          });
 
           let clipped_primitives =
                self.gui_context.context.tessellate(full_output.shapes, full_output.pixels_per_point);
@@ -328,10 +328,9 @@ where
                self.gui_context.renderer.render(&mut pass, &clipped_primitives, &screen_desc);
           }
 
-          for id in &textures_delta.free
-          {
+          textures_delta.free.iter().for_each(|id| {
                self.gui_context.renderer.free_texture(id);
-          }
+          });
 
           textures_delta.clear();
 

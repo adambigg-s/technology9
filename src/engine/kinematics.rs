@@ -118,7 +118,30 @@ impl ray::Cast for BoxCollider
 
      fn cast(&self, ray: ray::Ray) -> Option<Self::Hit>
      {
-          todo!()
+          let inv_dir = ray.direction.recip();
+          let mut tmin = 0.0f32;
+          let mut tmax = f32::INFINITY;
+
+          for i in 0 .. 3
+          {
+               let mut t1 = (self.lo[i] - ray.origin[i]) * inv_dir[i];
+               let mut t2 = (self.hi[i] - ray.origin[i]) * inv_dir[i];
+
+               if t1 > t2
+               {
+                    (t1, t2) = (t2, t1);
+               }
+
+               tmin = tmin.max(t1);
+               tmax = tmax.min(t2);
+
+               if tmin > tmax
+               {
+                    return None;
+               }
+          }
+
+          Some(true)
      }
 }
 

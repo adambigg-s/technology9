@@ -32,98 +32,7 @@ pub struct State
      pub player_shaker: player::PlayerHeadBobber,
 
      pub recti_world: loader::ChunkLoader,
-}
-
-#[repr(C)]
-#[derive(bytemuck::Pod, bytemuck::Zeroable, Debug, Default, Clone, Copy)]
-pub struct TriVertex
-{
-     pos: glam::Vec3,
-     col: glam::Vec3,
-}
-
-impl render::GfxVertex for TriVertex
-{
-     fn descriptor() -> wgpu::VertexBufferLayout<'static>
-     {
-          const ATTRIBS: &[wgpu::VertexAttribute] = &wgpu::vertex_attr_array![
-               0 => Float32x3,
-               1 => Float32x3,
-          ];
-          wgpu::VertexBufferLayout {
-               array_stride: size_of::<TriVertex>() as u64,
-               step_mode: wgpu::VertexStepMode::Vertex,
-               attributes: ATTRIBS,
-          }
-     }
-
-     fn position(&self) -> glam::Vec4
-     {
-          glam::Vec4::new(self.pos.x, self.pos.y, self.pos.z, 1.0)
-     }
-}
-
-pub struct TriPipeline;
-impl render::GfxPipeline for TriPipeline
-{
-     fn pipeline(
-          context: &render::GfxContext,
-          layouts: &[Option<&wgpu::BindGroupLayout>],
-     ) -> wgpu::RenderPipeline
-     {
-          let shader = context.device.create_shader_module(wgpu::ShaderModuleDescriptor {
-               label: Some("Triangle shader"),
-               source: wgpu::ShaderSource::Wgsl(
-                    fs::read_to_string("./shaders/triangle.wgsl").unwrap().into(),
-               ),
-          });
-
-          let layout = context.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-               label: Some("Triangle layout"),
-               bind_group_layouts: layouts,
-               immediate_size: 0,
-          });
-
-          context.device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-               label: Some("Triangle pipeline"),
-               layout: Some(&layout),
-               vertex: wgpu::VertexState {
-                    module: &shader,
-                    entry_point: Some("vs_main"),
-                    compilation_options: wgpu::PipelineCompilationOptions::default(),
-                    buffers: &[Some(TriVertex::descriptor())],
-               },
-               primitive: wgpu::PrimitiveState {
-                    topology: wgpu::PrimitiveTopology::TriangleList,
-                    strip_index_format: None,
-                    front_face: wgpu::FrontFace::Ccw,
-                    cull_mode: Some(wgpu::Face::Back),
-                    unclipped_depth: false,
-                    polygon_mode: wgpu::PolygonMode::Fill,
-                    conservative: false,
-               },
-               depth_stencil: Some(wgpu::DepthStencilState {
-                    format: wgpu::TextureFormat::Depth32Float,
-                    depth_write_enabled: Some(true),
-                    depth_compare: Some(wgpu::CompareFunction::Less),
-                    stencil: wgpu::StencilState::default(),
-                    bias: wgpu::DepthBiasState::default(),
-               }),
-               multisample: wgpu::MultisampleState::default(),
-               fragment: Some(wgpu::FragmentState {
-                    module: &shader,
-                    entry_point: Some("fs_main"),
-                    compilation_options: wgpu::PipelineCompilationOptions::default(),
-                    targets: &[Some(wgpu::ColorTargetState {
-                         format: context.config.format,
-                         blend: Some(wgpu::BlendState::REPLACE),
-                         write_mask: wgpu::ColorWrites::ALL,
-                    })],
-               }),
-               multiview_mask: None,
-               cache: None,
-          })
-     }
+     pub sparse_world: model::ModelCollection,
 }
 
 impl application::Application for State
@@ -153,27 +62,6 @@ impl application::Application for State
                b: 40.0 / 255.0,
                a: 1.0,
           };
-          rnd.register_mesh(
-               "tri_mesh",
-               util::mesh(
-                    ctx,
-                    &[
-                         TriVertex {
-                              pos: glam::vec3(-0.5, -0.5, 0.0),
-                              col: glam::vec3(1.0, 0.0, 0.0),
-                         },
-                         TriVertex {
-                              pos: glam::vec3(0.5, -0.5, 0.0),
-                              col: glam::vec3(0.0, 1.0, 0.0),
-                         },
-                         TriVertex {
-                              pos: glam::vec3(0.0, 0.5, 0.0),
-                              col: glam::vec3(0.0, 0.0, 1.0),
-                         },
-                    ],
-                    &[0u32, 1, 2],
-               ),
-          );
 
           // Rectilinear assets
           let diffuse_atlas = sync::Arc::new(atlas::TextureAtlas::new("./res/textures/liminal", 128)?);
@@ -192,20 +80,21 @@ impl application::Application for State
                .chunk_width(32)
                .build();
           recti_world.spawn_workers(1);
+          let sparse_world = model::ModelCollection::new();
 
-          let penguin_mesh = model::ModelLoader {
-               path: "./res/models/penguin",
-               context: ctx,
-               options: model::ModelOptions::default(),
-          }
-          .load_as(|v| {
-               TriVertex {
-                    pos: v.pos,
-                    col: v.nor,
-               }
-          })?[0]
-               .clone();
-          rnd.register_mesh("model_mesh", penguin_mesh);
+          // let penguin_mesh = model::ModelLoader {
+          //      path: "./res/models/penguin",
+          //      context: ctx,
+          //      options: model::ModelOptions::default(),
+          // }
+          // .load_as(|v| {
+          //      TriVertex {
+          //           pos: v.pos,
+          //           col: v.nor,
+          //      }
+          // })?[0]
+          //      .clone();
+          // rnd.register_mesh("model_mesh", penguin_mesh);
 
           rnd.register_bind_group_layout(
                ctx,
@@ -234,14 +123,7 @@ impl application::Application for State
                .exhausted(false)
                .build();
           let player_croucher = player::PlayerInterpolator::new(0.0);
-          let player_shaker = player::PlayerHeadBobber::builder()
-               .major_freq(0.25)
-               .minor_freq(0.5)
-               .major_amp(0.1)
-               .minor_amp(0.1)
-               .velocity_coeff(0.1)
-               .zero_velocity(0.1)
-               .build();
+          let player_shaker = player::PlayerHeadBobber::new();
           rnd.register_resource("camera_vp_uni", util::uniform::<glam::Mat4>(ctx, "Camera view-proj matrix"));
 
           let player_controller = player::PlayerController::builder()
@@ -263,7 +145,7 @@ impl application::Application for State
                "global_bg_layout",
                &["camera_vp_uni", "diffuse_atlas", "sampler_atlas"],
           )?;
-          rnd.register_pipeline::<TriPipeline>(ctx, "tri_pipe", &["global_bg_layout"]);
+          // rnd.register_pipeline::<TriPipeline>(ctx, "tri_pipe", &["global_bg_layout"]);
 
           // Skybox stuff
           let mut skybox = skybox::Skybox::new("./res/textures/skybox/", 32, 10_000.0)?;
@@ -298,6 +180,7 @@ impl application::Application for State
                player_shaker,
 
                recti_world,
+               sparse_world,
           })
      }
 
@@ -462,16 +345,6 @@ impl application::Application for State
 
           self.recti_world.sync_gfx_chunks(ctx, rnd);
 
-          rnd.queue(render::GfxDrawCall {
-               mesh: "tri_mesh".to_string(),
-               pipe: "tri_pipe".to_string(),
-               bind_groups: vec!["global_bg".to_string()],
-          });
-          rnd.queue(render::GfxDrawCall {
-               mesh: "model_mesh".to_string(),
-               pipe: "tri_pipe".to_string(),
-               bind_groups: vec!["global_bg".to_string()],
-          });
           rnd.queue(render::GfxDrawCall {
                mesh: "skybox_mesh".to_string(),
                pipe: "skybox_pipe".to_string(),

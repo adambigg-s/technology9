@@ -1,6 +1,7 @@
 struct VertexIn {
     @location(0) pos: vec3<f32>,
     @location(1) col: vec3<f32>,
+    @location(2) tex: vec2<f32>,
 };
 
 struct VertexOut {

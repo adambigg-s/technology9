@@ -2,8 +2,8 @@ use std::fs;
 use std::path;
 
 use anyhow::anyhow;
+use rustc_hash as rh;
 
-use crate::engine::aabb;
 use crate::engine::kinematics;
 use crate::engine::ray;
 use crate::engine::transform;
@@ -13,6 +13,40 @@ use crate::render::{self};
 
 pub const MODEL_EXTS: &[&str] = &["obj", "gltf"];
 pub const MODEL_TEX_EXTS: &[&str] = &["jpg", "tiff", "png"];
+
+#[derive(Debug)]
+pub enum ModelType
+{
+     Obj,
+     Gltf,
+}
+
+#[derive(bon::Builder, Debug)]
+pub struct ModelMetadata
+{
+     pub path: path::PathBuf,
+     pub mtype: ModelType,
+}
+
+#[derive(bon::Builder, Debug)]
+pub struct ModelOptions
+{
+     pub single_index: bool,
+     pub triangulate: bool,
+     pub transform: transform::Transform,
+}
+
+impl Default for ModelOptions
+{
+     fn default() -> Self
+     {
+          Self {
+               single_index: true,
+               triangulate: true,
+               transform: transform::Transform::identity(),
+          }
+     }
+}
 
 #[repr(C)]
 #[derive(bytemuck::Pod, bytemuck::Zeroable, bon::Builder, Debug, Default, Clone, Copy)]
@@ -51,40 +85,6 @@ pub struct ModelSegment
      pub vertices: Vec<ModelVertex>,
      pub indices: Vec<u32>,
      pub transform: transform::Transform,
-}
-
-#[derive(bon::Builder, Debug)]
-pub struct ModelOptions
-{
-     pub single_index: bool,
-     pub triangulate: bool,
-     pub transform: transform::Transform,
-}
-
-impl Default for ModelOptions
-{
-     fn default() -> Self
-     {
-          Self {
-               single_index: true,
-               triangulate: true,
-               transform: transform::Transform::identity(),
-          }
-     }
-}
-
-#[derive(Debug)]
-pub enum ModelType
-{
-     Obj,
-     Gltf,
-}
-
-#[derive(bon::Builder, Debug)]
-pub struct ModelMetadata
-{
-     pub path: path::PathBuf,
-     pub mtype: ModelType,
 }
 
 #[derive(bon::Builder, Debug)]
@@ -188,9 +188,8 @@ impl<'l> ModelLoader<'l>
                {
                     let (document, buffers, images) = gltf::import(metadata.path)?;
 
-                    for mesh in document.meshes() {
-
-                    }
+                    for mesh in document.meshes()
+                    {}
 
                     anyhow::bail!("Cooked")
                }
@@ -261,22 +260,65 @@ impl<'l> ModelLoader<'l>
 #[derive(bon::Builder, Debug, Default)]
 pub struct ModelEntity
 {
-     pub segments: Vec<ModelSegment>,
-     pub aabb: kinematics::BoxCollider,
+     segments: Vec<ModelSegment>,
+     aabb: kinematics::BoxCollider,
 }
 
-impl ModelEntity {
-     pub fn push_segment(&mut self, segment: ModelSegment) {
-          for vertex in segment.vertices {
-               self.aabb.expand(vertex.pos.to_array())
-          }
+impl ModelEntity
+{
+     pub fn new() -> Self
+     {
+          Self::default()
+     }
+
+     pub fn push_segment(&mut self, segment: ModelSegment)
+     {
+          segment.vertices.iter().for_each(|vertex| self.aabb.expand(vertex.pos.to_array()));
+          self.segments.push(segment);
      }
 }
 
-impl ray::Cast for ModelEntity {
-    type Hit = bool;
+impl ray::Cast for ModelEntity
+{
+     type Hit = bool;
 
-    fn cast(&self, ray: ray::Ray) -> Option<Self::Hit> {
-         self.aabb.cast(ray)
-    }
+     fn cast(&self, ray: ray::Ray) -> Option<Self::Hit>
+     {
+          self.aabb.cast(ray)
+     }
+}
+
+impl From<Vec<ModelSegment>> for ModelEntity
+{
+     fn from(value: Vec<ModelSegment>) -> Self
+     {
+          value.into_iter().fold(Self::new(), |mut ent, seg| {
+               ent.push_segment(seg);
+               ent
+          })
+     }
+}
+
+#[derive(Debug, Default)]
+pub struct ModelCollection
+{
+     pub models: rh::FxHashMap<String, ModelEntity>,
+}
+
+impl ModelCollection
+{
+     pub fn new() -> Self
+     {
+          Self::default()
+     }
+
+     pub fn update(&mut self, time: f32)
+     {
+          todo!()
+     }
+
+     pub fn gfx_sync(&mut self, context: &mut render::GfxContext, render: &mut render::GfxRenderer)
+     {
+          todo!()
+     }
 }
