@@ -1,5 +1,6 @@
 use std::fmt::Debug;
 
+use crate::world::block;
 use crate::world::chunk;
 use crate::world::delta;
 
@@ -25,7 +26,15 @@ impl TerrainGenerator
           {
                for j in 0 .. chunk.width()
                {
-                    *chunk.get_mut(glam::ivec3(i as i32, 0, j as i32)) = crate::world::block::Block::Plain;
+                    *chunk.get_mut(glam::ivec3(i as i32, 0, j as i32)) = block::Block::Plain;
+
+                    for k in 0 .. chunk.height()
+                    {
+                         if rand::random_bool(0.001)
+                         {
+                              *chunk.get_mut(glam::ivec3(i as i32, k as i32, j as i32)) = block::Block::Plain;
+                         }
+                    }
                }
           }
 

@@ -475,6 +475,13 @@ impl application::Application for State
 
      fn immediate_ui(&mut self, gui: &mut application::gui::GuiContext)
      {
-          _ = (gui, ());
+          egui::Window::new("Debug window").show(&gui.context, |ui| {
+               ui.label("Is this one working??");
+               if ui.button("Click Click to toggle collisions").clicked()
+               {
+                    log::info!("Something was actually clicked");
+                    self.player_controller.collisions = !self.player_controller.collisions;
+               }
+          });
      }
 }

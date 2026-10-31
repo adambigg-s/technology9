@@ -96,6 +96,8 @@ where
                }
           };
 
+          let _gui_response = state.gui_context.state.on_window_event(&state.window, &event);
+
           match event
           {
                | event::WindowEvent::ActivationTokenDone {

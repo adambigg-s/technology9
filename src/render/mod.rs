@@ -198,7 +198,7 @@ impl GfxRenderer
           {
                self.offscreen_texture_a =
                     Some(resource::GfxTexture::new_render_target(context, "Postpass target a")?);
-               self.offscreen_texture_a =
+               self.offscreen_texture_b =
                     Some(resource::GfxTexture::new_render_target(context, "Postpass target b")?);
                return Ok(());
           }

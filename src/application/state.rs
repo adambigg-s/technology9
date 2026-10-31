@@ -138,6 +138,7 @@ where
                let mut raw_pixels = Vec::new();
                data.chunks(row_padded_size as usize).for_each(|chunk| {
                     let unpadded_row = &chunk[.. unpadded as usize];
+                    #[allow(clippy::chunks_exact_to_as_chunks)]
                     for bgra in unpadded_row.chunks_exact(4)
                     {
                          raw_pixels.push(bgra[2]);
@@ -250,10 +251,90 @@ where
                &surface_view,
           );
 
-          self.gfx_context.queue.submit([encoder.finish()]);
+          let extra_buffers = self.ui_render(&mut encoder, &surface_view)?;
+
+          self.gfx_context.queue.submit(extra_buffers.into_iter().chain([encoder.finish()]));
 
           self.gfx_context.queue.present(output);
 
           Ok(())
+     }
+
+     fn ui_render(
+          &mut self,
+          encoder: &mut wgpu::CommandEncoder,
+          surface_view: &wgpu::TextureView,
+     ) -> anyhow::Result<Vec<wgpu::CommandBuffer>>
+     {
+          let raw_input = self.gui_context.state.take_egui_input(&self.window);
+          let context = self.gui_context.context.clone();
+          let gui_context = &mut self.gui_context;
+          let full_output = context.run_ui(raw_input, |_| {
+               self.inner_state.immediate_ui(gui_context);
+          });
+
+          self.gui_context.state.handle_platform_output(&self.window, full_output.platform_output);
+
+          let mut textures_delta = full_output.textures_delta;
+          for (&id, deltas) in &textures_delta.set
+          {
+               for delta in deltas
+               {
+                    self.gui_context.renderer.update_texture(
+                         &self.gfx_context.device,
+                         &self.gfx_context.queue,
+                         id,
+                         delta,
+                    );
+               }
+          }
+
+          let clipped_primitives =
+               self.gui_context.context.tessellate(full_output.shapes, full_output.pixels_per_point);
+
+          let screen_desc = egui_wgpu::ScreenDescriptor {
+               size_in_pixels: [self.gfx_context.config.width, self.gfx_context.config.height],
+               pixels_per_point: full_output.pixels_per_point,
+          };
+
+          let extra_buffers = self.gui_context.renderer.update_buffers(
+               &self.gfx_context.device,
+               &self.gfx_context.queue,
+               encoder,
+               &clipped_primitives,
+               &screen_desc,
+          );
+
+          {
+               let mut pass = encoder
+                    .begin_render_pass(&wgpu::RenderPassDescriptor {
+                         label: Some("'egui' render pass"),
+                         color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                              view: surface_view,
+                              depth_slice: None,
+                              resolve_target: None,
+                              ops: wgpu::Operations {
+                                   load: wgpu::LoadOp::Load,
+                                   store: wgpu::StoreOp::Store,
+                              },
+                         })],
+                         depth_stencil_attachment: None,
+                         timestamp_writes: None,
+                         occlusion_query_set: None,
+                         multiview_mask: None,
+                    })
+                    .forget_lifetime();
+
+               self.gui_context.renderer.render(&mut pass, &clipped_primitives, &screen_desc);
+          }
+
+          for id in &textures_delta.free
+          {
+               self.gui_context.renderer.free_texture(id);
+          }
+
+          textures_delta.clear();
+
+          Ok(extra_buffers)
      }
 }

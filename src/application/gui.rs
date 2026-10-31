@@ -16,7 +16,7 @@ impl GuiContext
 {
      pub async fn new(
           gfx_context: &render::GfxContext,
-          gfx_render: &render::GfxRenderer,
+          _gfx_render: &render::GfxRenderer,
           window: sync::Arc<window::Window>,
      ) -> anyhow::Result<Self>
      {
