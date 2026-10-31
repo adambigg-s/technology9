@@ -1,6 +1,7 @@
 use std::time;
 
 pub mod aabb;
+pub mod cycleable_enum;
 pub mod camera;
 pub mod do_in_debug;
 pub mod interp;

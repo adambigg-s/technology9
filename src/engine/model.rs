@@ -3,6 +3,9 @@ use std::path;
 
 use anyhow::anyhow;
 
+use crate::engine::aabb;
+use crate::engine::kinematics;
+use crate::engine::ray;
 use crate::engine::transform;
 use crate::render::mesh;
 use crate::render::util;
@@ -259,4 +262,21 @@ impl<'l> ModelLoader<'l>
 pub struct ModelEntity
 {
      pub segments: Vec<ModelSegment>,
+     pub aabb: kinematics::BoxCollider,
+}
+
+impl ModelEntity {
+     pub fn push_segment(&mut self, segment: ModelSegment) {
+          for vertex in segment.vertices {
+               self.aabb.expand(vertex.pos.to_array())
+          }
+     }
+}
+
+impl ray::Cast for ModelEntity {
+    type Hit = bool;
+
+    fn cast(&self, ray: ray::Ray) -> Option<Self::Hit> {
+         self.aabb.cast(ray)
+    }
 }

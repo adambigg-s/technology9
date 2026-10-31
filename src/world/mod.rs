@@ -4,10 +4,12 @@ pub mod delta;
 pub mod loader;
 pub mod map;
 
+use std::mem;
 use std::sync::{self};
 
 use rustc_hash as rh;
 
+use crate::engine::cycleable_enum;
 use crate::visual::light;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -20,6 +22,25 @@ pub enum ChunkStage
      LightingPropagated,
      LightingUpdated,
      Meshed,
+     EnumCounter,
+}
+
+impl cycleable_enum::CycleableEnum for ChunkStage
+{
+     fn enum_count(&self) -> usize
+     {
+          Self::EnumCounter as usize
+     }
+
+     fn to_usize(&self) -> usize
+     {
+          *self as usize
+     }
+
+     fn from_usize(index: usize) -> Self
+     {
+          unsafe { mem::transmute(index as u8) }
+     }
 }
 
 #[derive(bon::Builder, Debug, Clone)]

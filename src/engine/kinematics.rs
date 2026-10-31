@@ -1,6 +1,7 @@
 use std::ops;
 
 use crate::engine::aabb;
+use crate::engine::ray;
 
 pub trait Collision
 {
@@ -111,6 +112,16 @@ impl BoxCollider
      }
 }
 
+impl ray::Cast for BoxCollider
+{
+     type Hit = bool;
+
+     fn cast(&self, ray: ray::Ray) -> Option<Self::Hit>
+     {
+          todo!()
+     }
+}
+
 impl ops::Add<glam::Vec3> for BoxCollider
 {
      type Output = Self;
@@ -138,5 +149,13 @@ impl ops::Sub<glam::Vec3> for BoxCollider
                self.hi[dim] -= rhs[dim];
           });
           self
+     }
+}
+
+impl Default for BoxCollider
+{
+     fn default() -> Self
+     {
+          aabb::AaBb::new(glam::Vec3::INFINITY.to_array(), glam::Vec3::NEG_INFINITY.to_array())
      }
 }

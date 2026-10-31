@@ -29,6 +29,7 @@ pub struct State
      pub player_controller: player::PlayerController,
      pub player_sprinter: player::PlayerSprinter,
      pub player_croucher: player::PlayerInterpolator,
+     pub player_shaker: player::PlayerHeadBobber,
 
      pub recti_world: loader::ChunkLoader,
 }
@@ -233,6 +234,14 @@ impl application::Application for State
                .exhausted(false)
                .build();
           let player_croucher = player::PlayerInterpolator::new(0.0);
+          let player_shaker = player::PlayerHeadBobber::builder()
+               .major_freq(0.25)
+               .minor_freq(0.5)
+               .major_amp(0.1)
+               .minor_amp(0.1)
+               .velocity_coeff(0.1)
+               .zero_velocity(0.1)
+               .build();
           rnd.register_resource("camera_vp_uni", util::uniform::<glam::Mat4>(ctx, "Camera view-proj matrix"));
 
           let player_controller = player::PlayerController::builder()
@@ -286,6 +295,7 @@ impl application::Application for State
                player_controller,
                player_sprinter,
                player_croucher,
+               player_shaker,
 
                recti_world,
           })
@@ -384,7 +394,12 @@ impl application::Application for State
                          self.frame.dt(),
                     );
                     self.camera.inner.position = self.player_controller.collider.center()
-                         + glam::vec3(0.0, self.player_croucher.current, 0.0);
+                         + glam::vec3(0.0, self.player_croucher.current, 0.0)
+                         + self.player_shaker.head_bob(
+                              &self.camera,
+                              &self.player_controller.kinematics,
+                              self.frame.time(),
+                         );
                }
                | false =>
                {

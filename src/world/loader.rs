@@ -506,6 +506,8 @@ impl ChunkLoader
                }
                | world::ChunkStage::Meshed =>
                {}
+               | world::ChunkStage::EnumCounter =>
+               {}
           }
      }
 

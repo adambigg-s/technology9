@@ -294,6 +294,8 @@ where
                               state.window.set_cursor_visible(true);
                               state.input.request_fullscreen = false;
                          }
+                         | _ =>
+                         {}
                     }
 
                     match state.input.request_fullscreen

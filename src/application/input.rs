@@ -1,9 +1,12 @@
 use std::collections;
+use std::mem;
 use std::ops;
 
 use winit::keyboard;
 
 use crate::debexecute;
+use crate::engine::cycleable_enum;
+use crate::engine::cycleable_enum::CycleableEnum;
 
 #[derive(Debug, Clone, Copy)]
 pub enum MouseMode
@@ -12,19 +15,24 @@ pub enum MouseMode
      Grab,
      Free,
      Confine,
+     EnumCounter,
 }
 
-impl MouseMode
+impl cycleable_enum::CycleableEnum for MouseMode
 {
-     pub fn cycle(&self) -> Self
+     fn enum_count(&self) -> usize
      {
-          match self
-          {
-               | MouseMode::None => MouseMode::Grab,
-               | MouseMode::Grab => MouseMode::Free,
-               | MouseMode::Free => MouseMode::Confine,
-               | MouseMode::Confine => MouseMode::None,
-          }
+          Self::EnumCounter as usize
+     }
+
+     fn to_usize(&self) -> usize
+     {
+          *self as usize
+     }
+
+     fn from_usize(index: usize) -> Self
+     {
+          unsafe { mem::transmute(index as u8) }
      }
 }
 
