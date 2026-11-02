@@ -336,4 +336,94 @@ where
 
           Ok(extra_buffers)
      }
+
+     pub fn window(&self) -> &window::Window
+     {
+          &self.window
+     }
+
+     pub fn window_mut(&mut self) -> &mut sync::Arc<window::Window>
+     {
+          &mut self.window
+     }
+
+     pub fn set_window(&mut self, window: sync::Arc<window::Window>)
+     {
+          self.window = window;
+     }
+
+     pub fn gfx_context(&self) -> &render::GfxContext
+     {
+          &self.gfx_context
+     }
+
+     pub fn gfx_context_mut(&mut self) -> &mut render::GfxContext
+     {
+          &mut self.gfx_context
+     }
+
+     pub fn set_gfx_context(&mut self, gfx_context: render::GfxContext)
+     {
+          self.gfx_context = gfx_context;
+     }
+
+     pub fn gfx_render(&self) -> &render::GfxRenderer
+     {
+          &self.gfx_render
+     }
+
+     pub fn gfx_render_mut(&mut self) -> &mut render::GfxRenderer
+     {
+          &mut self.gfx_render
+     }
+
+     pub fn set_gfx_render(&mut self, gfx_render: render::GfxRenderer)
+     {
+          self.gfx_render = gfx_render;
+     }
+
+     pub fn gui_context(&self) -> &gui::GuiContext
+     {
+          &self.gui_context
+     }
+
+     pub fn gui_context_mut(&mut self) -> &mut gui::GuiContext
+     {
+          &mut self.gui_context
+     }
+
+     pub fn set_gui_context(&mut self, gui_context: gui::GuiContext)
+     {
+          self.gui_context = gui_context;
+     }
+
+     pub fn input(&self) -> &input::Input
+     {
+          &self.input
+     }
+
+     pub fn input_mut(&mut self) -> &mut input::Input
+     {
+          &mut self.input
+     }
+
+     pub fn set_input(&mut self, input: input::Input)
+     {
+          self.input = input;
+     }
+
+     pub fn inner_state(&self) -> &Inner
+     {
+          &self.inner_state
+     }
+
+     pub fn inner_state_mut(&mut self) -> &mut Inner
+     {
+          &mut self.inner_state
+     }
+
+     pub fn set_inner_state(&mut self, inner_state: Inner)
+     {
+          self.inner_state = inner_state;
+     }
 }

@@ -1,5 +1,5 @@
-use std::fmt::Display;
 use std::fmt;
+use std::fmt::Display;
 use std::mem;
 
 use crate::engine::kinematics;

@@ -23,18 +23,19 @@ pub struct PlayerController
 
 impl PlayerController
 {
-     pub fn jiggle_free<Collider>(&mut self, world: &Collider)
+     pub fn jiggle_free<Collider>(&mut self, world: &Collider, mut attempts: usize, range: f32)
      where
           Collider: kinematics::Collision<Collider = kinematics::BoxCollider>,
      {
-          while world.collides(self.collider)
+          while world.collides(self.collider) && attempts > 0
           {
                self.collider = self.collider
                     + glam::vec3(
-                         rand::random_range(-1.0 ..= 1.0),
-                         rand::random_range(-1.0 ..= 1.0),
-                         rand::random_range(-1.0 ..= 1.0),
+                         rand::random_range(-range ..= range),
+                         rand::random_range(-range ..= range),
+                         rand::random_range(-range ..= range),
                     );
+               attempts -= 1;
           }
      }
 }
@@ -348,7 +349,6 @@ impl PlayerInterpolator
           {
                self.current = self.current.min(self.target);
           }
-          // self.current = self.current.clamp(self.target, self.target);
           self.current
      }
 }

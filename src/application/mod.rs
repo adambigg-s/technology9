@@ -74,6 +74,84 @@ pub struct Config
      title: &'static str,
 }
 
+impl Config
+{
+     pub fn height(&self) -> u32
+     {
+          self.height
+     }
+
+     pub fn height_mut(&mut self) -> &mut u32
+     {
+          &mut self.height
+     }
+
+     pub fn set_height(&mut self, height: u32)
+     {
+          self.height = height;
+     }
+
+     pub fn width(&self) -> u32
+     {
+          self.width
+     }
+
+     pub fn width_mut(&mut self) -> &mut u32
+     {
+          &mut self.width
+     }
+
+     pub fn set_width(&mut self, width: u32)
+     {
+          self.width = width;
+     }
+
+     pub fn topleft_x(&self) -> u32
+     {
+          self.topleft_x
+     }
+
+     pub fn topleft_x_mut(&mut self) -> &mut u32
+     {
+          &mut self.topleft_x
+     }
+
+     pub fn set_topleft_x(&mut self, topleft_x: u32)
+     {
+          self.topleft_x = topleft_x;
+     }
+
+     pub fn topleft_y(&self) -> u32
+     {
+          self.topleft_y
+     }
+
+     pub fn topleft_y_mut(&mut self) -> &mut u32
+     {
+          &mut self.topleft_y
+     }
+
+     pub fn set_topleft_y(&mut self, topleft_y: u32)
+     {
+          self.topleft_y = topleft_y;
+     }
+
+     pub fn title(&self) -> &'static str
+     {
+          self.title
+     }
+
+     pub fn title_mut(&mut self) -> &mut &'static str
+     {
+          &mut self.title
+     }
+
+     pub fn set_title(&mut self, title: &'static str)
+     {
+          self.title = title;
+     }
+}
+
 fn init()
 {
      unsafe {

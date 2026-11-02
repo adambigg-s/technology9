@@ -11,8 +11,8 @@ use crate::render::mesh;
 use crate::render::util;
 use crate::render::{self};
 
-pub const MODEL_EXTS: &[&str] = &["obj", "gltf"];
-pub const MODEL_TEX_EXTS: &[&str] = &["jpg", "tiff", "png"];
+const _MODEL_EXTS: &[&str] = &["obj", "gltf"];
+const _MODEL_TEX_EXTS: &[&str] = &["jpg", "tiff", "png"];
 
 #[derive(Debug)]
 pub enum ModelType
@@ -21,11 +21,68 @@ pub enum ModelType
      Gltf,
 }
 
+#[derive(Debug)]
+pub enum ModelExt
+{
+     Jpg,
+     Tiff,
+     Png,
+}
+
 #[derive(bon::Builder, Debug)]
 pub struct ModelMetadata
 {
      pub path: path::PathBuf,
      pub mtype: ModelType,
+     pub mext: Option<ModelExt>,
+}
+
+impl ModelMetadata
+{
+     pub fn path(&self) -> &path::PathBuf
+     {
+          &self.path
+     }
+
+     pub fn path_mut(&mut self) -> &mut path::PathBuf
+     {
+          &mut self.path
+     }
+
+     pub fn set_path(&mut self, path: path::PathBuf)
+     {
+          self.path = path;
+     }
+
+     pub fn mtype(&self) -> &ModelType
+     {
+          &self.mtype
+     }
+
+     pub fn mtype_mut(&mut self) -> &mut ModelType
+     {
+          &mut self.mtype
+     }
+
+     pub fn set_mtype(&mut self, mtype: ModelType)
+     {
+          self.mtype = mtype;
+     }
+
+     pub fn mext(&self) -> Option<&ModelExt>
+     {
+          self.mext.as_ref()
+     }
+
+     pub fn mext_mut(&mut self) -> &mut Option<ModelExt>
+     {
+          &mut self.mext
+     }
+
+     pub fn set_mext(&mut self, mext: Option<ModelExt>)
+     {
+          self.mext = mext;
+     }
 }
 
 #[derive(bon::Builder, Debug)]
@@ -34,6 +91,54 @@ pub struct ModelOptions
      pub single_index: bool,
      pub triangulate: bool,
      pub transform: transform::Transform,
+}
+
+impl ModelOptions
+{
+     pub fn single_index(&self) -> bool
+     {
+          self.single_index
+     }
+
+     pub fn single_index_mut(&mut self) -> &mut bool
+     {
+          &mut self.single_index
+     }
+
+     pub fn set_single_index(&mut self, single_index: bool)
+     {
+          self.single_index = single_index;
+     }
+
+     pub fn triangulate(&self) -> bool
+     {
+          self.triangulate
+     }
+
+     pub fn triangulate_mut(&mut self) -> &mut bool
+     {
+          &mut self.triangulate
+     }
+
+     pub fn set_triangulate(&mut self, triangulate: bool)
+     {
+          self.triangulate = triangulate;
+     }
+
+     pub fn transform(&self) -> transform::Transform
+     {
+          self.transform
+     }
+
+     pub fn transform_mut(&mut self) -> &mut transform::Transform
+     {
+          &mut self.transform
+     }
+
+     pub fn set_transform(&mut self, transform: transform::Transform)
+     {
+          self.transform = transform;
+     }
 }
 
 impl Default for ModelOptions
@@ -55,6 +160,54 @@ pub struct ModelVertex
      pub pos: glam::Vec3,
      pub nor: glam::Vec3,
      pub tex: glam::Vec2,
+}
+
+impl ModelVertex
+{
+     pub fn pos(&self) -> glam::prelude::Vec3
+     {
+          self.pos
+     }
+
+     pub fn pos_mut(&mut self) -> &mut glam::Vec3
+     {
+          &mut self.pos
+     }
+
+     pub fn set_pos(&mut self, pos: glam::Vec3)
+     {
+          self.pos = pos;
+     }
+
+     pub fn nor(&self) -> glam::prelude::Vec3
+     {
+          self.nor
+     }
+
+     pub fn nor_mut(&mut self) -> &mut glam::Vec3
+     {
+          &mut self.nor
+     }
+
+     pub fn set_nor(&mut self, nor: glam::Vec3)
+     {
+          self.nor = nor;
+     }
+
+     pub fn tex(&self) -> glam::prelude::Vec2
+     {
+          self.tex
+     }
+
+     pub fn tex_mut(&mut self) -> &mut glam::Vec2
+     {
+          &mut self.tex
+     }
+
+     pub fn set_tex(&mut self, tex: glam::Vec2)
+     {
+          self.tex = tex;
+     }
 }
 
 impl render::GfxVertex for ModelVertex
@@ -87,11 +240,65 @@ pub struct ModelSegment
      pub transform: transform::Transform,
 }
 
+impl ModelSegment
+{
+     pub fn gfx_upload(&self, context: &render::GfxContext) -> mesh::GfxMesh
+     {
+          util::mesh(context, &self.vertices, &self.indices)
+     }
+
+     pub fn vertices(&self) -> &[ModelVertex]
+     {
+          &self.vertices
+     }
+
+     pub fn vertices_mut(&mut self) -> &mut Vec<ModelVertex>
+     {
+          &mut self.vertices
+     }
+
+     pub fn set_vertices(&mut self, vertices: Vec<ModelVertex>)
+     {
+          self.vertices = vertices;
+     }
+
+     pub fn indices(&self) -> &[u32]
+     {
+          &self.indices
+     }
+
+     pub fn indices_mut(&mut self) -> &mut Vec<u32>
+     {
+          &mut self.indices
+     }
+
+     pub fn set_indices(&mut self, indices: Vec<u32>)
+     {
+          self.indices = indices;
+     }
+
+     pub fn transform(&self) -> transform::Transform
+     {
+          self.transform
+     }
+
+     pub fn transform_mut(&mut self) -> &mut transform::Transform
+     {
+          &mut self.transform
+     }
+
+     pub fn set_transform(&mut self, transform: transform::Transform)
+     {
+          self.transform = transform;
+     }
+}
+
 #[derive(bon::Builder, Debug)]
 pub struct ModelLoader<'l>
 {
      pub path: &'l str,
      pub context: &'l render::GfxContext,
+     #[builder(default)]
      pub options: ModelOptions,
 }
 
@@ -128,6 +335,11 @@ impl<'l> ModelLoader<'l>
                     )
                })
                .collect())
+     }
+
+     pub fn load_as_entity(&self) -> anyhow::Result<ModelEntity>
+     {
+          Ok(ModelEntity::from_segments(self.raw_loaded_model()?))
      }
 
      pub fn raw_loaded_model(&self) -> anyhow::Result<Vec<ModelSegment>>
@@ -220,6 +432,7 @@ impl<'l> ModelLoader<'l>
                                              found = Some(ModelMetadata {
                                                   path: entry.path(),
                                                   mtype: ModelType::Obj,
+                                                  mext: None,
                                              });
                                              true
                                         }
@@ -228,6 +441,7 @@ impl<'l> ModelLoader<'l>
                                              found = Some(ModelMetadata {
                                                   path: entry.path(),
                                                   mtype: ModelType::Gltf,
+                                                  mext: None,
                                              });
                                              true
                                         }
@@ -255,12 +469,60 @@ impl<'l> ModelLoader<'l>
      {
           todo!()
      }
+
+     pub fn path(&self) -> &'l str
+     {
+          self.path
+     }
+
+     pub fn path_mut(&mut self) -> &mut &'l str
+     {
+          &mut self.path
+     }
+
+     pub fn set_path(&mut self, path: &'l str)
+     {
+          self.path = path;
+     }
+
+     pub fn context(&self) -> &'l render::GfxContext
+     {
+          self.context
+     }
+
+     pub fn context_mut(&mut self) -> &mut &'l render::GfxContext
+     {
+          &mut self.context
+     }
+
+     pub fn set_context(&mut self, context: &'l render::GfxContext)
+     {
+          self.context = context;
+     }
+
+     pub fn options(&self) -> &ModelOptions
+     {
+          &self.options
+     }
+
+     pub fn options_mut(&mut self) -> &mut ModelOptions
+     {
+          &mut self.options
+     }
+
+     pub fn set_options(&mut self, options: ModelOptions)
+     {
+          self.options = options;
+     }
 }
 
 #[derive(bon::Builder, Debug, Default)]
 pub struct ModelEntity
 {
+     // each segment needs:
+     //   - transform for each frame
      segments: Vec<ModelSegment>,
+     transform: transform::Transform,
      aabb: kinematics::BoxCollider,
 }
 
@@ -271,10 +533,63 @@ impl ModelEntity
           Self::default()
      }
 
+     pub fn from_segments(segments: Vec<ModelSegment>) -> Self
+     {
+          segments.into_iter().fold(Self::new(), |mut ent, seg| {
+               ent.push_segment(seg);
+               ent
+          })
+     }
+
      pub fn push_segment(&mut self, segment: ModelSegment)
      {
           segment.vertices.iter().for_each(|vertex| self.aabb.expand(vertex.pos.to_array()));
           self.segments.push(segment);
+     }
+
+     pub fn segments(&self) -> &[ModelSegment]
+     {
+          &self.segments
+     }
+
+     pub fn segments_mut(&mut self) -> &mut Vec<ModelSegment>
+     {
+          &mut self.segments
+     }
+
+     pub fn set_segments(&mut self, segments: Vec<ModelSegment>)
+     {
+          self.segments = segments;
+     }
+
+     pub fn aabb(&self) -> super::aabb::AaBb<f32, 3>
+     {
+          self.aabb
+     }
+
+     pub fn aabb_mut(&mut self) -> &mut kinematics::BoxCollider
+     {
+          &mut self.aabb
+     }
+
+     pub fn set_aabb(&mut self, aabb: kinematics::BoxCollider)
+     {
+          self.aabb = aabb;
+     }
+
+     pub fn transform(&self) -> transform::Transform
+     {
+          self.transform
+     }
+
+     pub fn transform_mut(&mut self) -> &mut transform::Transform
+     {
+          &mut self.transform
+     }
+
+     pub fn set_transform(&mut self, transform: transform::Transform)
+     {
+          self.transform = transform;
      }
 }
 
@@ -292,10 +607,7 @@ impl From<Vec<ModelSegment>> for ModelEntity
 {
      fn from(value: Vec<ModelSegment>) -> Self
      {
-          value.into_iter().fold(Self::new(), |mut ent, seg| {
-               ent.push_segment(seg);
-               ent
-          })
+          Self::from_segments(value)
      }
 }
 
@@ -319,6 +631,40 @@ impl ModelCollection
 
      pub fn gfx_sync(&mut self, context: &mut render::GfxContext, render: &mut render::GfxRenderer)
      {
-          todo!()
+          for (name, entity) in &self.models
+          {
+               if let Some(x) = render.get_resource_mut(&name)
+               {}
+          }
+     }
+
+     pub fn next_key(&self) -> String
+     {
+          let mut key = "model".to_string() + &self.models.len().to_string();
+          loop
+          {
+               if !self.models.contains_key(&key)
+               {
+                    break;
+               }
+               key += &self.models.len().to_string();
+          }
+          key += "_mesh";
+          key
+     }
+
+     pub fn models(&self) -> &rh::FxHashMap<String, ModelEntity>
+     {
+          &self.models
+     }
+
+     pub fn models_mut(&mut self) -> &mut rh::FxHashMap<String, ModelEntity>
+     {
+          &mut self.models
+     }
+
+     pub fn set_models(&mut self, models: rh::FxHashMap<String, ModelEntity>)
+     {
+          self.models = models;
      }
 }

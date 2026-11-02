@@ -171,4 +171,3 @@ impl kinematics::Collision for Chunk
           false
      }
 }
-

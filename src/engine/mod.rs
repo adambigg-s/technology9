@@ -1,8 +1,8 @@
 use std::time;
 
 pub mod aabb;
-pub mod cycleable_enum;
 pub mod camera;
+pub mod cycleable_enum;
 pub mod do_in_debug;
 pub mod interp;
 pub mod kinematics;

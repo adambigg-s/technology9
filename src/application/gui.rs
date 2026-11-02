@@ -43,4 +43,49 @@ impl GuiContext
                renderer,
           })
      }
+
+     pub fn context(&self) -> &egui::Context
+     {
+          &self.context
+     }
+
+     pub fn context_mut(&mut self) -> &mut egui::Context
+     {
+          &mut self.context
+     }
+
+     pub fn set_context(&mut self, context: egui::Context)
+     {
+          self.context = context;
+     }
+
+     pub fn state(&self) -> &egui_winit::State
+     {
+          &self.state
+     }
+
+     pub fn state_mut(&mut self) -> &mut egui_winit::State
+     {
+          &mut self.state
+     }
+
+     pub fn set_state(&mut self, state: egui_winit::State)
+     {
+          self.state = state;
+     }
+
+     pub fn renderer(&self) -> &egui_wgpu::Renderer
+     {
+          &self.renderer
+     }
+
+     pub fn renderer_mut(&mut self) -> &mut egui_wgpu::Renderer
+     {
+          &mut self.renderer
+     }
+
+     pub fn set_renderer(&mut self, renderer: egui_wgpu::Renderer)
+     {
+          self.renderer = renderer;
+     }
 }

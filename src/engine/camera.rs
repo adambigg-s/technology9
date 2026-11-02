@@ -1,6 +1,7 @@
 use std::f32;
 use std::fmt::Display;
 use std::fmt::{self};
+use std::ops;
 
 use glam::camera::rh::proj::directx;
 
@@ -53,6 +54,111 @@ impl Camera
      {
           directx::perspective(self.fov.to_radians(), self.ar, self.znear, self.zfear)
      }
+
+     pub fn inner(&self) -> transform::Transform
+     {
+          self.inner
+     }
+
+     pub fn inner_mut(&mut self) -> &mut transform::Transform
+     {
+          &mut self.inner
+     }
+
+     pub fn set_inner(&mut self, inner: transform::Transform)
+     {
+          self.inner = inner;
+     }
+
+     pub fn ar(&self) -> f32
+     {
+          self.ar
+     }
+
+     pub fn ar_mut(&mut self) -> &mut f32
+     {
+          &mut self.ar
+     }
+
+     pub fn set_ar(&mut self, ar: f32)
+     {
+          self.ar = ar;
+     }
+
+     pub fn fov(&self) -> f32
+     {
+          self.fov
+     }
+
+     pub fn fov_mut(&mut self) -> &mut f32
+     {
+          &mut self.fov
+     }
+
+     pub fn set_fov(&mut self, fov: f32)
+     {
+          self.fov = fov;
+     }
+
+     pub fn znear(&self) -> f32
+     {
+          self.znear
+     }
+
+     pub fn znear_mut(&mut self) -> &mut f32
+     {
+          &mut self.znear
+     }
+
+     pub fn set_znear(&mut self, znear: f32)
+     {
+          self.znear = znear;
+     }
+
+     pub fn zfear(&self) -> f32
+     {
+          self.zfear
+     }
+
+     pub fn zfear_mut(&mut self) -> &mut f32
+     {
+          &mut self.zfear
+     }
+
+     pub fn set_zfear(&mut self, zfear: f32)
+     {
+          self.zfear = zfear;
+     }
+
+     pub fn pitch(&self) -> f32
+     {
+          self.pitch
+     }
+
+     pub fn pitch_mut(&mut self) -> &mut f32
+     {
+          &mut self.pitch
+     }
+
+     pub fn set_pitch(&mut self, pitch: f32)
+     {
+          self.pitch = pitch;
+     }
+
+     pub fn yaw(&self) -> f32
+     {
+          self.yaw
+     }
+
+     pub fn yaw_mut(&mut self) -> &mut f32
+     {
+          &mut self.yaw
+     }
+
+     pub fn set_yaw(&mut self, yaw: f32)
+     {
+          self.yaw = yaw;
+     }
 }
 
 impl render::GfxCamera for Camera
@@ -72,5 +178,23 @@ impl Display for Camera
           writeln!(fmt, "Camera rvec: {:.2}", self.inner.right())?;
           writeln!(fmt, "Camera uvec: {:.2}", self.inner.up())?;
           Ok(())
+     }
+}
+
+impl ops::Deref for Camera
+{
+     type Target = transform::Transform;
+
+     fn deref(&self) -> &Self::Target
+     {
+          &self.inner
+     }
+}
+
+impl ops::DerefMut for Camera
+{
+     fn deref_mut(&mut self) -> &mut Self::Target
+     {
+          &mut self.inner
      }
 }

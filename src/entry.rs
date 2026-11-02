@@ -1,4 +1,3 @@
-use std::fs;
 use std::sync;
 
 use crate::application;
@@ -11,7 +10,6 @@ use crate::engine::model;
 use crate::engine::player;
 use crate::pipelines;
 use crate::render::GfxCamera;
-use crate::render::GfxVertex;
 use crate::render::resource;
 use crate::render::util;
 use crate::render::{self};
@@ -26,6 +24,7 @@ pub struct State
      pub frame: engine::FrameData,
 
      pub camera: camera::Camera,
+
      pub player_controller: player::PlayerController,
      pub player_sprinter: player::PlayerSprinter,
      pub player_croucher: player::PlayerInterpolator,
@@ -95,6 +94,14 @@ impl application::Application for State
           // })?[0]
           //      .clone();
           // rnd.register_mesh("model_mesh", penguin_mesh);
+
+          let penguin = model::ModelLoader::builder()
+               .path("./res/models/penguin")
+               .context(ctx)
+               .build()
+               .load_as_entity()?;
+          for seg in penguin.segments()
+          {}
 
           rnd.register_bind_group_layout(
                ctx,
@@ -217,7 +224,7 @@ impl application::Application for State
                {
                     if self.recti_world.collides(self.player_controller.collider)
                     {
-                         self.player_controller.jiggle_free(&self.recti_world);
+                         self.player_controller.jiggle_free(&self.recti_world, 25, 1.0);
                     }
 
                     let camera_offset = 0.65;

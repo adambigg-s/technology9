@@ -160,6 +160,141 @@ impl Input
           *click = false;
           out
      }
+
+     pub fn key_pressed(&self) -> &collections::HashSet<&'static str>
+     {
+          &self.key_pressed
+     }
+
+     pub fn key_pressed_mut(&mut self) -> &mut collections::HashSet<&'static str>
+     {
+          &mut self.key_pressed
+     }
+
+     pub fn set_key_pressed(&mut self, key_pressed: collections::HashSet<&'static str>)
+     {
+          self.key_pressed = key_pressed;
+     }
+
+     pub fn key_released(&self) -> &collections::HashSet<&'static str>
+     {
+          &self.key_released
+     }
+
+     pub fn key_released_mut(&mut self) -> &mut collections::HashSet<&'static str>
+     {
+          &mut self.key_released
+     }
+
+     pub fn set_key_released(&mut self, key_released: collections::HashSet<&'static str>)
+     {
+          self.key_released = key_released;
+     }
+
+     pub fn mouse_pressed(&self) -> (bool, bool)
+     {
+          self.mouse_pressed
+     }
+
+     pub fn mouse_pressed_mut(&mut self) -> &mut (bool, bool)
+     {
+          &mut self.mouse_pressed
+     }
+
+     pub fn set_mouse_pressed(&mut self, mouse_pressed: (bool, bool))
+     {
+          self.mouse_pressed = mouse_pressed;
+     }
+
+     pub fn mouse_released(&self) -> (bool, bool)
+     {
+          self.mouse_released
+     }
+
+     pub fn mouse_released_mut(&mut self) -> &mut (bool, bool)
+     {
+          &mut self.mouse_released
+     }
+
+     pub fn set_mouse_released(&mut self, mouse_released: (bool, bool))
+     {
+          self.mouse_released = mouse_released;
+     }
+
+     pub fn mouse_delta(&self) -> (f32, f32)
+     {
+          self.mouse_delta
+     }
+
+     pub fn mouse_delta_mut(&mut self) -> &mut (f32, f32)
+     {
+          &mut self.mouse_delta
+     }
+
+     pub fn set_mouse_delta(&mut self, mouse_delta: (f32, f32))
+     {
+          self.mouse_delta = mouse_delta;
+     }
+
+     pub fn request_quit(&self) -> bool
+     {
+          self.request_quit
+     }
+
+     pub fn request_quit_mut(&mut self) -> &mut bool
+     {
+          &mut self.request_quit
+     }
+
+     pub fn set_request_quit(&mut self, request_quit: bool)
+     {
+          self.request_quit = request_quit;
+     }
+
+     pub fn request_screenshot(&self) -> bool
+     {
+          self.request_screenshot
+     }
+
+     pub fn request_screenshot_mut(&mut self) -> &mut bool
+     {
+          &mut self.request_screenshot
+     }
+
+     pub fn set_request_screenshot(&mut self, request_screenshot: bool)
+     {
+          self.request_screenshot = request_screenshot;
+     }
+
+     pub fn request_fullscreen(&self) -> bool
+     {
+          self.request_fullscreen
+     }
+
+     pub fn request_fullscreen_mut(&mut self) -> &mut bool
+     {
+          &mut self.request_fullscreen
+     }
+
+     pub fn set_request_fullscreen(&mut self, request_fullscreen: bool)
+     {
+          self.request_fullscreen = request_fullscreen;
+     }
+
+     pub fn request_grab(&self) -> MouseMode
+     {
+          self.request_grab
+     }
+
+     pub fn request_grab_mut(&mut self) -> &mut MouseMode
+     {
+          &mut self.request_grab
+     }
+
+     pub fn set_request_grab(&mut self, request_grab: MouseMode)
+     {
+          self.request_grab = request_grab;
+     }
 }
 
 #[rustfmt::skip]
